@@ -1,4 +1,4 @@
-/* Кильватер — логика приложения: состояние, карта, профиль, очки, чат */
+/* Charter Key — состояние, аккаунт, карта, очки, два ИИ */
 
 (() => {
   'use strict';
@@ -6,12 +6,12 @@
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const KEY = 'kilvater.v1';
+  const KEY = 'charterkey.v1';
 
   /* ────────── состояние ────────── */
   const DEFAULT = {
-    name: 'Алина Т.', city: 'gocek', points: 0,
-    checkins: [], regattas: [], referrals: 0, claimed: [], log: []
+    registered: false, name: 'Гость', email: '', refCode: '', invitedBy: '',
+    points: 0, checkins: [], regattas: [], referrals: 0, claimed: [], log: []
   };
 
   let state = load();
@@ -26,10 +26,11 @@
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
   }
 
-  const dest = () => DESTINATIONS.find(d => d.id === state.city) || DESTINATIONS[0];
-  const pointById = id => DESTINATIONS.flatMap(d => d.points).find(p => p.id === id);
+  const dest = () => DESTINATIONS[0];
+  const pointById = id => dest().points.find(p => p.id === id);
   const levelOf = pts => [...LEVELS].reverse().find(l => pts >= l.from) || LEVELS[0];
   const nextLevel = pts => LEVELS.find(l => l.from > pts) || null;
+
   const catStyle = cat => {
     const c = CAT_META[cat].color;
     return `--cat-color:${c};--cat-bg:${hex(c, .16)};--cat-line:${hex(c, .45)}`;
@@ -38,8 +39,17 @@
     const n = parseInt(h.slice(1), 16);
     return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
   }
+  const catIcon = cat => CATEGORIES.find(c => c.id === cat).icon;
 
-  /* ────────── очки и журнал ────────── */
+  /* склонение числительных: 1 друг, 2 друга, 5 друзей */
+  function plural(n, one, few, many) {
+    const m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+    return many;
+  }
+
+  /* ────────── очки, журнал, тосты ────────── */
   function addPoints(n, label) {
     state.points += n;
     state.log.unshift({ t: Date.now(), label, n });
@@ -56,10 +66,59 @@
     t.className = 'toast';
     t.innerHTML = html;
     $('#toasts').append(t);
-    setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 320); }, 3200);
+    setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 320); }, 3400);
   }
 
-  /* ────────── фильтры карты ────────── */
+  /* ────────── аккаунт ────────── */
+  function openAuth(reason) {
+    if (state.registered) { $('#profile').scrollIntoView({ behavior: 'smooth' }); return; }
+    const m = $('#authModal');
+    $('#authError').hidden = true;
+    m.hidden = false;
+    document.body.style.overflow = 'hidden';
+    if (reason) toast(reason);
+    setTimeout(() => $('#authName').focus(), 60);
+  }
+  function closeAuth() {
+    $('#authModal').hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  function requireAuth(reason) {
+    if (state.registered) return true;
+    openAuth(reason);
+    return false;
+  }
+
+  function register(name, email, promo) {
+    const err = $('#authError');
+    if (name.trim().length < 2) { err.textContent = 'Напишите имя — оно будет на карточке экипажа.'; err.hidden = false; return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email.trim())) { err.textContent = 'Проверьте почту: нужен формат name@domain.com'; err.hidden = false; return; }
+
+    state.registered = true;
+    state.name = name.trim();
+    state.email = email.trim();
+    state.invitedBy = promo.trim().toUpperCase();
+    state.refCode = makeCode(state.name);
+    save();
+    closeAuth();
+
+    addPoints(BONUS.signup, 'Регистрация в Charter Key');
+    if (state.invitedBy) {
+      addPoints(BONUS.invitee, `Промокод друга ${state.invitedBy}`);
+    }
+    renderAll();
+    $('#profile').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function makeCode(name) {
+    const first = name.trim().split(/\s+/)[0] || 'CREW';
+    const map = { А:'A',Б:'B',В:'V',Г:'G',Д:'D',Е:'E',Ж:'ZH',З:'Z',И:'I',Й:'Y',К:'K',Л:'L',М:'M',Н:'N',О:'O',П:'P',Р:'R',С:'S',Т:'T',У:'U',Ф:'F',Х:'H',Ц:'C',Ч:'CH',Ш:'SH',Щ:'SCH',Ы:'Y',Э:'E',Ю:'YU',Я:'YA',Ь:'',Ъ:'' };
+    const lat = [...first.toUpperCase()].map(c => map[c] ?? c).join('').replace(/[^A-Z]/g, '').slice(0, 10) || 'CREW';
+    return `CK-${lat}-${1000 + Math.floor(Math.random() * 8999)}`;
+  }
+
+  /* ────────── карта: фильтры ────────── */
   let filter = 'all';
   let query = '';
   let activePoi = null;
@@ -71,31 +130,22 @@
     return okCat && okQ;
   });
 
-  /* ────────── города ────────── */
-  function renderCities() {
-    $('#cityTabs').innerHTML = DESTINATIONS.map(d => `
-      <button class="city-tab" role="tab" data-city="${d.id}" style="--accent:${d.accent}"
-              aria-selected="${d.id === state.city}">
-        <b>${esc(d.city)}</b><span>${esc(d.region)}</span>
-      </button>`).join('');
-
+  function renderCity() {
     const d = dest();
     $('#cityMeta').innerHTML = `
+      <span>Город: <b>${esc(d.city)}, ${esc(d.region)}</b></span>
       <span>Сезон: <b>${esc(d.season)}</b></span>
       <span>Ветер: <b>${esc(d.wind)}</b></span>
       <span>Вода: <b>${esc(d.water)}</b></span>
-      <span>Регата: <b>${esc(d.regatta)}</b></span>
-      <span>Точек: <b>${d.points.length}</b></span>`;
+      <span>Мест на карте: <b>${d.points.length}</b></span>`;
     $('#chatCity').textContent = d.city;
-    $('#gaCity').textContent = d.city;
-    $('#gaPoints').textContent = d.points.length;
     $('#gaSeason').textContent = d.season;
     $('#gaWind').textContent = d.wind;
     $('#gaWater').textContent = d.water;
     $('#gaRegatta').textContent = d.regatta;
-    $('#eyebrowCities').textContent = DESTINATIONS.length;
-    $('#eyebrowPoints').textContent = DESTINATIONS.reduce((a, x) => a + x.points.length, 0);
-    document.documentElement.style.setProperty('--aqua-city', d.accent);
+    $('#eyebrowPoints').textContent = d.points.length;
+    $('#statPoints').textContent = d.points.length;
+    $('#statRegattas').textContent = REGATTAS.length;
   }
 
   function renderFilters() {
@@ -105,7 +155,6 @@
       </button>`).join('');
   }
 
-  /* ────────── список точек ────────── */
   function renderList() {
     const list = visiblePoints();
     const box = $('#poiList');
@@ -116,7 +165,7 @@
     box.innerHTML = list.map(p => `
       <button class="poi-item ${activePoi === p.id ? 'active' : ''} ${state.checkins.includes(p.id) ? 'done' : ''}"
               data-poi="${p.id}" style="${catStyle(p.cat)}">
-        <span class="poi-ico">${CATEGORIES.find(c => c.id === p.cat).icon}</span>
+        <span class="poi-ico">${catIcon(p.cat)}</span>
         <span>
           <span class="poi-name">${esc(p.name)}</span><br>
           <span class="poi-sub">${esc(CAT_META[p.cat].label)} · ${esc(p.price)}</span>
@@ -125,24 +174,22 @@
       </button>`).join('');
   }
 
-  /* ────────── пины ────────── */
   function renderPins() {
     const vis = new Set(visiblePoints().map(p => p.id));
     $('#pins').innerHTML = dest().points.map(p => `
       <button class="pin ${vis.has(p.id) ? '' : 'dim'} ${activePoi === p.id ? 'active' : ''} ${state.checkins.includes(p.id) ? 'done' : ''}"
               data-poi="${p.id}" style="left:${p.x}%;top:${p.y}%;${catStyle(p.cat)}" title="${esc(p.name)}">
         <span class="pin-body">
-          <span class="pin-dot">${CATEGORIES.find(c => c.id === p.cat).icon}</span>
+          <span class="pin-dot">${catIcon(p.cat)}</span>
           <span class="pin-label">${esc(p.name)}</span>
         </span>
         <span class="pin-stem"></span>
       </button>`).join('');
 
     $('#mapLegend').innerHTML = Object.entries(CAT_META)
-      .map(([k, v]) => `<span class="lg"><i style="background:${v.color}"></i>${esc(v.label)}</span>`).join('');
+      .map(([, v]) => `<span class="lg"><i style="background:${v.color}"></i>${esc(v.label)}</span>`).join('');
   }
 
-  /* ────────── карточка точки ────────── */
   function renderDetail() {
     const box = $('#poiDetail');
     const p = activePoi ? pointById(activePoi) : null;
@@ -153,7 +200,7 @@
     box.innerHTML = `
       <div class="pd-top">
         <div>
-          <span class="pd-cat">${CATEGORIES.find(c => c.id === p.cat).icon} ${esc(CAT_META[p.cat].label)}</span>
+          <span class="pd-cat">${catIcon(p.cat)} ${esc(CAT_META[p.cat].label)}</span>
           <h3 class="pd-title">${esc(p.name)}</h3>
           <p class="pd-desc">${esc(p.desc)}</p>
         </div>
@@ -181,6 +228,7 @@
   }
 
   function checkin(id) {
+    if (!requireAuth('Чек-ины копятся в аккаунте — заведите его за минуту')) return;
     if (state.checkins.includes(id)) return;
     const p = pointById(id);
     state.checkins.push(id);
@@ -208,8 +256,8 @@
 
   /* ────────── регаты ────────── */
   function renderRegattas() {
+    const d = dest();
     $('#regGrid').innerHTML = REGATTAS.map(r => {
-      const city = DESTINATIONS.find(d => d.id === r.city);
       const joined = state.regattas.includes(r.id);
       return `
         <article class="reg ${joined ? 'joined' : ''}">
@@ -218,7 +266,7 @@
             <span class="reg-date">${esc(r.date)}</span>
           </div>
           <h3>${esc(r.name)}</h3>
-          <span class="reg-city">${esc(city.city)} · ${esc(city.region)}</span>
+          <span class="reg-city">${esc(d.city)} · ${esc(d.region)}</span>
           <div class="reg-rows">
             <span>Флот: ${esc(r.fleet)}</span>
             <span>${esc(r.slots)}</span>
@@ -227,49 +275,56 @@
             <button class="btn ${joined ? 'btn-ghost' : 'btn-soft'} btn-sm" data-reg="${r.id}" ${joined ? 'disabled' : ''} type="button">
               ${joined ? '✓ Вы в списке' : `Я иду · +${r.pts}`}
             </button>
-            <button class="btn btn-link btn-sm" data-regcity="${r.city}" type="button">Город на карте</button>
+            <button class="btn btn-link btn-sm" data-scroll="#map" type="button">Места рядом</button>
           </div>
         </article>`;
     }).join('');
   }
 
   function joinRegatta(id) {
+    if (!requireAuth('Заявка на регату сохраняется в аккаунте')) return;
     if (state.regattas.includes(id)) return;
     const r = REGATTAS.find(x => x.id === id);
     state.regattas.push(id);
     addPoints(r.pts, `Заявка на регату: ${r.name}`);
-    if (state.city !== r.city) switchCity(r.city);
     renderRegattas(); renderHero();
   }
 
   /* ────────── hero ────────── */
   function renderHero() {
     const d = dest();
-    const r = REGATTAS.find(x => x.city === d.id) || REGATTAS[0];
+    const r = REGATTAS[0];
     $('#hcName').textContent = r.name;
     $('#hcCity').textContent = `${d.city} · ${d.region}`;
     $('#hcWind').textContent = d.wind;
     $('#hcWater').textContent = d.water;
     $('#hcFleet').textContent = r.fleet;
-    $('#hcBadge').textContent = r.date.split(' ').slice(0, 3).join(' ');
+    $('#hcBadge').textContent = r.date;
     const joined = state.regattas.includes(r.id);
     const btn = $('#hcJoin');
     btn.textContent = joined ? '✓ Вы в списке экипажей' : `Я иду · +${r.pts} очков`;
     btn.disabled = joined;
     btn.dataset.reg = r.id;
-    $('#statPoints').textContent = DESTINATIONS.reduce((a, x) => a + x.points.length, 0);
     $('#statCheckins').textContent = state.checkins.length;
   }
 
   /* ────────── профиль ────────── */
   function renderProfile() {
+    const reg = state.registered;
     const lvl = levelOf(state.points);
     const next = nextLevel(state.points);
+
+    $('#authGate').hidden = reg;
+    $('#authBtn').textContent = reg ? state.name.split(' ')[0] : 'Регистрация';
+
     $('#ptsChipValue').textContent = state.points.toLocaleString('ru-RU');
     $('#pfPts').textContent = state.points.toLocaleString('ru-RU');
-    $('#pfRole').textContent = `${lvl.name} · экипаж «Кильватер»`;
+    $('#pfRole').textContent = reg ? `${lvl.name} · ${esc(state.email)}` : 'Гость · без аккаунта';
     $('#pfName').value = state.name;
-    $('#avatar').textContent = state.name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'К';
+    $('#pfName').disabled = !reg;
+    $('#avatar').textContent = reg
+      ? (state.name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'CK')
+      : '?';
 
     $('#lvCur').textContent = lvl.name;
     $('#lvNext').textContent = next
@@ -282,21 +337,24 @@
     $('#pfCheckins').textContent = state.checkins.length;
     $('#pfRegattas').textContent = state.regattas.length;
     $('#pfRefs').textContent = state.referrals;
-    $('#pfCities').textContent = new Set(
-      state.checkins.map(id => DESTINATIONS.find(d => d.points.some(p => p.id === id)).id)
-    ).size;
+    $('#pfBonuses').textContent = state.claimed.length;
 
-    const slug = (state.name.trim().split(/\s+/)[0] || 'crew').toUpperCase()
-      .replace(/[^A-ZА-Я]/g, '') || 'CREW';
-    $('#refLink').value = `kilvater.app/r/${translit(slug)}-${(2600 + state.points % 900)}`;
+    $('#refLink').value = reg ? `charterkey.app/r/${state.refCode}` : 'Появится после регистрации';
+    $('#refCopy').disabled = !reg;
+    $('#refSim').disabled = !reg;
     $('#refDots').innerHTML = Array.from({ length: 5 }, (_, i) => `<i class="${i < state.referrals ? 'on' : ''}"></i>`).join('');
     $('#refHint').textContent = state.referrals >= 5
-      ? 'Все пятеро на борту — каюта на переходе ваша.'
-      : `${state.referrals} из 5 друзей · на пятом — каюта на переходе Гёчек — Бодрум`;
+      ? 'Все пятеро на борту — сутки чартера ваши.'
+      : `${state.referrals} из 5 · приглашено ${state.referrals} ${plural(state.referrals, 'друг', 'друга', 'друзей')}`;
+    $('#refTiers').innerHTML = REF_TIERS.map(t => `
+      <li class="${state.referrals >= t.n ? 'on' : ''}">
+        <b>${t.n} ${plural(t.n, 'друг', 'друга', 'друзей')}</b>
+        <span>${esc(t.title)} — ${esc(t.sub)}</span>
+      </li>`).join('');
 
     $('#rewards').innerHTML = REWARDS.map(r => {
       const claimed = state.claimed.includes(r.id);
-      const can = state.points >= r.cost;
+      const can = reg && state.points >= r.cost;
       return `
         <div class="reward ${claimed ? 'claimed' : ''}">
           <div>
@@ -306,23 +364,23 @@
           </div>
           ${claimed
             ? '<span class="poi-pts">получено</span>'
-            : `<button class="btn ${can ? 'btn-soft' : 'btn-ghost'} btn-sm" data-reward="${r.id}" ${can ? '' : 'disabled'} type="button">${can ? 'Забрать' : `${r.cost} очк.`}</button>`}
+            : `<button class="btn ${can ? 'btn-soft' : 'btn-ghost'} btn-sm" data-reward="${r.id}" type="button">${can ? 'Забрать' : `${r.cost} очк.`}</button>`}
         </div>`;
     }).join('');
 
     $('#activityLog').innerHTML = state.log.length
-      ? state.log.map(l => `<li>${esc(l.label)} <span>+${l.n} · ${new Date(l.t).toLocaleString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></li>`).join('')
-      : '<li class="log-empty">Пока пусто. Сделайте первый чек-ин на карте.</li>';
-  }
-
-  function translit(s) {
-    const m = { А:'A',Б:'B',В:'V',Г:'G',Д:'D',Е:'E',Ж:'ZH',З:'Z',И:'I',Й:'Y',К:'K',Л:'L',М:'M',Н:'N',О:'O',П:'P',Р:'R',С:'S',Т:'T',У:'U',Ф:'F',Х:'H',Ц:'C',Ч:'CH',Ш:'SH',Щ:'SCH',Ы:'Y',Э:'E',Ю:'YU',Я:'YA',Ь:'',Ъ:'' };
-    return [...s].map(c => m[c] ?? c).join('').slice(0, 10);
+      ? state.log.map(l => `<li>${esc(l.label)} <span>${l.n > 0 ? '+' : ''}${l.n} · ${new Date(l.t).toLocaleString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></li>`).join('')
+      : '<li class="log-empty">Пока пусто. Заведите аккаунт и сделайте первый чек-ин на карте.</li>';
   }
 
   function claimReward(id) {
+    if (!requireAuth('Бонусы привязаны к аккаунту')) return;
     const r = REWARDS.find(x => x.id === id);
-    if (!r || state.claimed.includes(id) || state.points < r.cost) return;
+    if (!r || state.claimed.includes(id)) return;
+    if (state.points < r.cost) {
+      toast(`Не хватает <b>${r.cost - state.points}</b> очков до «${esc(r.title)}»`);
+      return;
+    }
     state.points -= r.cost;
     state.claimed.push(id);
     state.log.unshift({ t: Date.now(), label: `Бонус: ${r.title}`, n: -r.cost });
@@ -330,9 +388,38 @@
     toast(`Бонус ваш · промокод <b>${esc(r.code)}</b>`);
   }
 
-  /* ────────── чат ────────── */
-  function ctx() {
-    return { dest: dest(), state, level: levelOf(state.points), nextLevel: nextLevel(state.points) };
+  /* ────────── два ИИ ────────── */
+  let mode = 'assistant';
+
+  const engine = () => (mode === 'guide' ? Guide : Assistant);
+  const ctx = () => ({ dest: dest(), state, level: levelOf(state.points), nextLevel: nextLevel(state.points) });
+
+  const SIDEBAR = {
+    assistant: {
+      title: 'Что знает ассистент',
+      items: [
+        'Лодки и цены по сезону, что входит в чартер',
+        'Документы: права, радиолицензия, депозит и страховка',
+        'Экипаж, провизия, трансфер из Даламана',
+        'Отмены и переносы — сроки и суммы',
+        'Ваши очки, бонусы и реферальная программа'
+      ]
+    },
+    guide: {
+      title: 'Что знает гид',
+      items: [
+        `${DESTINATIONS[0].points.length} мест города — с ценами и часами`,
+        'В какое время суток куда идти',
+        'Сценарии недели: штиль, вечер после гонки, день с детьми',
+        'Ваш уровень, очки и уже сделанные чек-ины'
+      ]
+    }
+  };
+
+  function renderSidebar() {
+    const s = SIDEBAR[mode];
+    $('#gaTitle').textContent = s.title;
+    $('#gaList').innerHTML = s.items.map(i => `<li>${i}</li>`).join('');
   }
 
   function bubble(kind, html, cards) {
@@ -345,7 +432,7 @@
       wrap.className = 'msg-cards';
       wrap.innerHTML = cards.map(p => `
         <button class="msg-card" data-poi="${p.id}" style="${catStyle(p.cat)}" type="button">
-          <span class="poi-ico">${CATEGORIES.find(c => c.id === p.cat).icon}</span>
+          <span class="poi-ico">${catIcon(p.cat)}</span>
           <span><span class="mc-name">${esc(p.name)}</span><br><span class="mc-sub">${esc(p.price)} · ${esc(p.time)}</span></span>
           <span class="mc-go">на карте →</span>
         </button>`).join('');
@@ -373,7 +460,7 @@
 
     setTimeout(() => {
       t.remove();
-      const res = Guide.answer(text, ctx());
+      const res = engine().answer(text, ctx());
       bubble('bot', res.text, res.cards);
       chips(res.chips);
     }, 420 + Math.random() * 380);
@@ -381,27 +468,28 @@
 
   function resetChat() {
     $('#chatLog').innerHTML = '';
-    const w = Guide.WELCOME(dest());
+    const w = mode === 'guide' ? Guide.WELCOME(dest()) : Assistant.WELCOME(state);
     bubble('bot', w.text);
     chips(w.chips);
+    renderSidebar();
   }
 
-  /* ────────── смена города ────────── */
-  function switchCity(id) {
-    state.city = id; activePoi = null; query = ''; filter = 'all';
-    $('#searchInput').value = '';
-    save();
-    renderCities(); renderFilters(); MapView.render(dest());
-    renderList(); renderPins(); renderDetail();
-    renderCollections(); renderHero(); resetChat();
+  function setMode(next) {
+    if (mode === next) return;
+    mode = next;
+    $$('[data-mode]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.mode === mode)));
+    resetChat();
   }
 
   /* ────────── события ────────── */
   document.addEventListener('click', e => {
     const t = e.target;
 
-    const city = t.closest('[data-city]');
-    if (city) { switchCity(city.dataset.city); return; }
+    if (t.closest('[data-auth]')) { openAuth(); return; }
+    if (t.closest('[data-auth-close]')) { closeAuth(); return; }
+
+    const m = t.closest('[data-mode]');
+    if (m) { setMode(m.dataset.mode); return; }
 
     const f = t.closest('[data-cat]');
     if (f) { filter = f.dataset.cat; renderFilters(); renderList(); renderPins(); return; }
@@ -410,11 +498,7 @@
     if (poi) { selectPoi(poi.dataset.poi, true); return; }
 
     const coll = t.closest('[data-coll]');
-    if (coll) {
-      selectPoi(coll.dataset.coll, false);
-      $('#map').scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
+    if (coll) { selectPoi(coll.dataset.coll, false); $('#map').scrollIntoView({ behavior: 'smooth' }); return; }
 
     const ci = t.closest('[data-checkin]');
     if (ci) { checkin(ci.dataset.checkin); return; }
@@ -422,6 +506,7 @@
     const ak = t.closest('[data-ask]');
     if (ak) {
       const p = pointById(ak.dataset.ask);
+      setMode('guide');
       $('#guide').scrollIntoView({ behavior: 'smooth' });
       setTimeout(() => ask(p.name), 350);
       return;
@@ -429,9 +514,6 @@
 
     const reg = t.closest('[data-reg]');
     if (reg) { joinRegatta(reg.dataset.reg); return; }
-
-    const rc = t.closest('[data-regcity]');
-    if (rc) { switchCity(rc.dataset.regcity); $('#map').scrollIntoView({ behavior: 'smooth' }); return; }
 
     const rw = t.closest('[data-reward]');
     if (rw) { claimReward(rw.dataset.reward); return; }
@@ -441,11 +523,25 @@
     const sc = t.closest('[data-scroll]');
     if (sc) { $(sc.dataset.scroll).scrollIntoView({ behavior: 'smooth' }); return; }
 
-    if (t.classList.contains('chip')) { ask(t.textContent); return; }
+    if (t.classList.contains('chip')) {
+      const q = t.textContent;
+      if (/зарегистрироваться/i.test(q)) { openAuth(); return; }
+      ask(q);
+      return;
+    }
 
     if (t.closest('#burger')) { $('#nav').classList.toggle('open'); return; }
     if (t.closest('#nav a')) { $('#nav').classList.remove('open'); return; }
     if (t.closest('#ptsChip')) { $('#profile').scrollIntoView({ behavior: 'smooth' }); return; }
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !$('#authModal').hidden) closeAuth();
+  });
+
+  $('#authForm').addEventListener('submit', e => {
+    e.preventDefault();
+    register($('#authName').value, $('#authEmail').value, $('#authPromo').value);
   });
 
   $('#searchInput').addEventListener('input', e => {
@@ -460,23 +556,26 @@
   });
 
   $('#refCopy').addEventListener('click', async () => {
-    const v = $('#refLink').value;
-    try { await navigator.clipboard.writeText(v); } catch { $('#refLink').select(); }
+    if (!requireAuth('Ссылка появится сразу после регистрации')) return;
+    try { await navigator.clipboard.writeText($('#refLink').value); } catch { $('#refLink').select(); }
     toast('Ссылка скопирована — отправьте экипажу');
   });
 
   $('#refSim').addEventListener('click', () => {
+    if (!requireAuth('Приглашать можно из аккаунта')) return;
     if (state.referrals >= 5) { toast('Все пять приглашений уже использованы'); return; }
     state.referrals++;
-    addPoints(250, `Друг присоединился по ссылке (${state.referrals}/5)`);
+    const tier = REF_TIERS.find(x => x.n === state.referrals);
+    addPoints(BONUS.inviter, `Друг по ссылке (${state.referrals}/5)`);
+    if (tier) toast(`Порог ${tier.n}: <b>${esc(tier.title)}</b> открыт`);
     renderProfile();
   });
 
   $('#resetAll').addEventListener('click', () => {
-    if (!confirm('Сбросить очки, чек-ины и бонусы?')) return;
+    if (!confirm('Выйти из аккаунта и стереть очки, чек-ины и бонусы?')) return;
     state = { ...DEFAULT }; save();
-    switchCity(state.city); renderProfile();
-    toast('Прогресс сброшен');
+    renderAll(); resetChat();
+    toast('Аккаунт очищен');
   });
 
   /* активный пункт меню при скролле */
@@ -489,14 +588,19 @@
   ['map', 'collections', 'regattas', 'guide', 'profile'].forEach(id => spy.observe($('#' + id)));
 
   /* ────────── старт ────────── */
-  renderCities();
-  renderFilters();
+  function renderAll() {
+    renderCity();
+    renderFilters();
+    renderList();
+    renderPins();
+    renderDetail();
+    renderCollections();
+    renderRegattas();
+    renderHero();
+    renderProfile();
+  }
+
   MapView.render(dest());
-  renderList();
-  renderPins();
-  renderCollections();
-  renderRegattas();
-  renderHero();
-  renderProfile();
+  renderAll();
   resetChat();
 })();

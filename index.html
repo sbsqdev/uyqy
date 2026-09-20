@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Кильватер — карта городов, где швартуются регаты</title>
-<meta name="description" content="Карта точек в регатных городах: что поесть, что увидеть, чем заняться. ИИ-гид, профиль участника, очки, бонусы и рефералы.">
+<title>Charter Key — чартер и карта Гёчека</title>
+<meta name="description" content="Charter Key: чартер яхт в Гёчеке, карта мест города, ИИ-ассистент и ИИ-гид, аккаунт с очками, бонусами и реферальной программой.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -18,16 +18,20 @@
 <header class="topbar" id="top">
   <a class="brand" href="#top">
     <span class="brand-mark" aria-hidden="true">
-      <svg viewBox="0 0 32 32" width="30" height="30"><path d="M16 3 L25 21 H7 Z" fill="currentColor" opacity=".9"/><path d="M4 25 h24 c-2 4 -6 5 -12 5 s-10 -1 -12 -5z" fill="currentColor" opacity=".45"/></svg>
+      <svg viewBox="0 0 32 32" width="30" height="30">
+        <path d="M16 2 L24 18 H8 Z" fill="currentColor" opacity=".92"/>
+        <circle cx="16" cy="23" r="4" fill="none" stroke="currentColor" stroke-width="2.4"/>
+        <path d="M16 27 v4 M16 30 h3.5 M16 28 h2.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+      </svg>
     </span>
-    <span class="brand-text">Кильватер<em>карта регатных городов</em></span>
+    <span class="brand-text">Charter Key<em>чартер и карта Гёчека</em></span>
   </a>
 
   <nav class="nav" id="nav">
     <a href="#map" data-nav>Карта</a>
     <a href="#collections" data-nav>Подборки</a>
     <a href="#regattas" data-nav>Регаты</a>
-    <a href="#guide" data-nav>ИИ-гид</a>
+    <a href="#guide" data-nav>ИИ-помощь</a>
     <a href="#profile" data-nav>Профиль</a>
   </nav>
 
@@ -36,7 +40,7 @@
       <span class="pts-dot" aria-hidden="true"></span>
       <b id="ptsChipValue">0</b><span class="pts-unit">очков</span>
     </button>
-    <button class="btn btn-primary btn-sm" data-scroll="#guide" type="button">Спросить гида</button>
+    <button class="btn btn-primary btn-sm" data-auth type="button" id="authBtn">Регистрация</button>
     <button class="burger" id="burger" type="button" aria-label="Меню"><span></span><span></span><span></span></button>
   </div>
 </header>
@@ -47,16 +51,16 @@
     <div class="hero-glow" aria-hidden="true"></div>
     <div class="wrap hero-inner">
       <div class="hero-copy">
-        <span class="eyebrow"><i class="live-dot"></i>Сезон 2026 · <span id="eyebrowCities">3</span> города · <span id="eyebrowPoints">36</span> проверенных точек</span>
-        <h1>Вы приехали на регату.<br><span class="grad">Город — это вторая половина поездки.</span></h1>
-        <p class="lede">Кильватер — карта для тех, кто ходит на регаты ради удовольствия. Где поесть рыбу после финиша, куда идти в день без ветра, где смотреть закат и чинить порванный парус. Всё привязано к вашему профилю: чек-ины приносят очки, очки — бонусы, друзья по ссылке — ещё очки.</p>
+        <span class="eyebrow"><i class="live-dot"></i>Гёчек · сезон 2026 · <span id="eyebrowPoints">12</span> проверенных мест</span>
+        <h1>Ключ от недели на воде.<br><span class="grad">Лодка, город и всё между ними.</span></h1>
+        <p class="lede">Charter Key — чартер яхт в Гёчеке и карта города к нему. Ассистент отвечает за поездку: лодки, документы, экипаж, провизия. Гид — за берег: где поесть рыбу после перехода, куда идти в штиль, где смотреть закат. Аккаунт превращает поездки в очки, очки — в бонусы на следующий чартер.</p>
         <div class="hero-cta">
-          <button class="btn btn-primary" data-scroll="#map" type="button">Открыть карту</button>
-          <button class="btn btn-ghost" data-scroll="#guide" type="button">Спросить ИИ-гида<span class="kbd">↵</span></button>
+          <button class="btn btn-primary" data-auth type="button">Завести аккаунт · +300 очков</button>
+          <button class="btn btn-ghost" data-scroll="#map" type="button">Открыть карту<span class="kbd">↵</span></button>
         </div>
         <ul class="hero-stats">
-          <li><b id="statPoints">37</b><span>точек на карте</span></li>
-          <li><b>4</b><span>регаты в календаре</span></li>
+          <li><b id="statPoints">12</b><span>мест на карте</span></li>
+          <li><b id="statRegattas">3</b><span>регаты в сезоне</span></li>
           <li><b id="statCheckins">0</b><span>ваших чек-инов</span></li>
         </ul>
       </div>
@@ -86,13 +90,11 @@
     <div class="wrap">
       <div class="sec-head">
         <div>
-          <span class="sec-kicker">Карта точек</span>
+          <span class="sec-kicker">Карта мест · Гёчек</span>
           <h2>Что поделать, что поесть, что увидеть</h2>
         </div>
-        <p class="sec-note">Выберите город регаты — карта, фильтры и карточки обновятся. Чек-ин в точке начисляет очки в профиль.</p>
+        <p class="sec-note">Двенадцать мест, отобранных вручную: цена, часы и совет, который знает местный. Чек-ин начисляет очки в аккаунт.</p>
       </div>
-
-      <div class="city-tabs" id="cityTabs" role="tablist" aria-label="Города"></div>
 
       <div class="city-meta" id="cityMeta"></div>
 
@@ -155,20 +157,23 @@
     <div class="wrap">
       <div class="sec-head">
         <div>
-          <span class="sec-kicker">ИИ-гид</span>
-          <h2>Спросите так, как спросили бы местного</h2>
+          <span class="sec-kicker">Два ИИ</span>
+          <h2>Ассистент по чартеру и гид по городу</h2>
         </div>
-        <p class="sec-note">Гид знает все точки города, ваш уровень, очки и бонусы. Отвечает конкретно: место, цена, время, почему туда.</p>
+        <p class="sec-note">Ассистент — про поездку: лодки, документы, экипаж, отмены, бонусы. Гид — про берег: места, цены, часы и время суток. Оба видят ваш аккаунт.</p>
       </div>
 
       <div class="guide-layout">
       <div class="chat" id="chat">
-        <div class="chat-head">
-          <div class="chat-avatar" aria-hidden="true">⛵</div>
-          <div>
-            <b>Гид по городу <span id="chatCity">Гёчек</span></b>
-            <span class="chat-status"><i class="live-dot"></i>на связи</span>
-          </div>
+        <div class="chat-tabs" role="tablist" aria-label="Выбор ИИ">
+          <button class="chat-tab" data-mode="assistant" role="tab" aria-selected="true" type="button">
+            <span class="ct-ico" aria-hidden="true">🔑</span>
+            <span><b>Ассистент Charter Key</b><em>чартер, документы, бонусы</em></span>
+          </button>
+          <button class="chat-tab" data-mode="guide" role="tab" aria-selected="false" type="button">
+            <span class="ct-ico" aria-hidden="true">🧭</span>
+            <span><b>Гид по городу</b><em><span id="chatCity">Гёчек</span> · места, еда, маршруты</em></span>
+          </button>
           <button class="btn btn-link btn-sm" id="chatReset" type="button">Очистить</button>
         </div>
         <div class="chat-log" id="chatLog" aria-live="polite"></div>
@@ -181,13 +186,8 @@
 
       <aside class="guide-aside">
         <div class="card">
-          <h3>Что знает гид</h3>
-          <ul class="ga-list">
-            <li><span><b id="gaPoints">12</b> точек города <span id="gaCity">Гёчек</span> — с ценами и часами</span></li>
-            <li><span>Ваш уровень, очки и уже сделанные чек-ины</span></li>
-            <li><span>Календарь регат и сколько очков даёт участие</span></li>
-            <li><span>Сценарии недели: штиль, вечер после гонки, день с детьми</span></li>
-          </ul>
+          <h3 id="gaTitle">Что знает ассистент</h3>
+          <ul class="ga-list" id="gaList"></ul>
         </div>
         <div class="card ga-facts">
           <h3>Город сейчас</h3>
@@ -207,9 +207,17 @@
       <div class="sec-head">
         <div>
           <span class="sec-kicker">Профиль</span>
-          <h2>Ваш кильватерный след</h2>
+          <h2>Ваш аккаунт Charter Key</h2>
         </div>
-        <p class="sec-note">Очки, уровень, регаты, награды и реферальная программа — в одном месте.</p>
+        <p class="sec-note">Очки, уровень, заявки на регаты, бонусы и приглашения — в одном месте. Всё считается от чек-инов и друзей по ссылке.</p>
+      </div>
+
+      <div class="auth-gate" id="authGate" hidden>
+        <div>
+          <b>Вы смотрите как гость.</b>
+          <p class="muted">Карта и оба ИИ работают полностью. Но чек-ины не сохраняются, очки не копятся и бонусы забрать нельзя — для этого нужен аккаунт. Регистрация сразу даёт 300 очков.</p>
+        </div>
+        <button class="btn btn-primary" data-auth type="button">Создать аккаунт · +300 очков</button>
       </div>
 
       <div class="profile-grid">
@@ -218,7 +226,7 @@
             <div class="avatar" id="avatar">АТ</div>
             <div class="pf-id">
               <input class="pf-name" id="pfName" value="Алина Т." aria-label="Имя в профиле" maxlength="24">
-              <span class="pf-role" id="pfRole">Юнга · экипаж «Кильватер»</span>
+              <span class="pf-role" id="pfRole">Гость · без аккаунта</span>
             </div>
             <div class="pf-pts"><b id="pfPts">0</b><span>очков</span></div>
           </div>
@@ -233,21 +241,22 @@
             <div><b id="pfCheckins">0</b><span>чек-инов</span></div>
             <div><b id="pfRegattas">0</b><span>регат</span></div>
             <div><b id="pfRefs">0</b><span>друзей</span></div>
-            <div><b id="pfCities">0</b><span>городов</span></div>
+            <div><b id="pfBonuses">0</b><span>бонусов</span></div>
           </div>
         </article>
 
         <article class="card ref-card">
           <h3>Рефералы</h3>
-          <p class="muted">Друг регистрируется по ссылке и идёт на регату — вам 250 очков, ему 150 на старте.</p>
+          <p class="muted">Друг регистрируется по ссылке и бронирует чартер — вам 250 очков, ему 150 на старте.</p>
           <div class="ref-link">
             <input id="refLink" readonly aria-label="Реферальная ссылка">
             <button class="btn btn-soft btn-sm" id="refCopy" type="button">Скопировать</button>
           </div>
           <div class="ref-progress">
             <div class="ref-dots" id="refDots"></div>
-            <span class="muted" id="refHint">0 из 5 друзей · на пятом — каюта на переходе</span>
+            <span class="muted" id="refHint">0 из 5 друзей</span>
           </div>
+          <ul class="ref-tiers" id="refTiers"></ul>
           <button class="btn btn-ghost btn-sm" id="refSim" type="button">Пригласить друга (демо)</button>
         </article>
 
@@ -269,20 +278,52 @@
 <footer class="footer">
   <div class="wrap footer-inner">
     <div>
-      <b>Кильватер</b>
-      <p class="muted">Демо-проект: карта точек регатных городов, ИИ-гид, профиль с очками и рефералами. Названия заведений вымышлены, прогресс хранится локально в браузере.</p>
+      <b>Charter Key</b>
+      <p class="muted">Демо-проект: чартер в Гёчеке, карта мест города, ИИ-ассистент и ИИ-гид, аккаунт с очками, бонусами и реферальной программой. Названия заведений и цены вымышлены, аккаунт хранится локально в браузере.</p>
     </div>
     <nav class="footer-nav">
-      <a href="#map">Карта</a><a href="#regattas">Регаты</a><a href="#guide">ИИ-гид</a><a href="#profile">Профиль</a>
+      <a href="#map">Карта</a><a href="#regattas">Регаты</a><a href="#guide">ИИ-помощь</a><a href="#profile">Профиль</a>
     </nav>
   </div>
 </footer>
+
+<div class="modal" id="authModal" hidden>
+  <div class="modal-backdrop" data-auth-close></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <button class="modal-x" data-auth-close type="button" aria-label="Закрыть">✕</button>
+    <span class="sec-kicker">Аккаунт Charter Key</span>
+    <h3 id="authTitle">Регистрация за минуту</h3>
+    <ul class="auth-perks">
+      <li><b>+300 очков</b> сразу на счёт — это уже почти первый бонус</li>
+      <li>Чек-ины на карте копятся и превращаются в скидку на чартер</li>
+      <li>Личная ссылка: друг регистрируется — вам 250 очков, ему 150</li>
+    </ul>
+    <form id="authForm" novalidate>
+      <label class="field">
+        <span>Имя и фамилия</span>
+        <input id="authName" name="name" autocomplete="name" placeholder="Алина Турсунова" required>
+      </label>
+      <label class="field">
+        <span>Почта</span>
+        <input id="authEmail" name="email" type="email" autocomplete="email" placeholder="alina@example.com" required>
+      </label>
+      <label class="field">
+        <span>Промокод друга <i>необязательно</i></span>
+        <input id="authPromo" name="promo" placeholder="CK-ALINA-2631">
+      </label>
+      <p class="auth-error" id="authError" hidden></p>
+      <button class="btn btn-primary" type="submit">Создать аккаунт · +300 очков</button>
+      <p class="auth-note">Демо-версия: аккаунт хранится в этом браузере, ничего никуда не отправляется.</p>
+    </form>
+  </div>
+</div>
 
 <div class="toast-wrap" id="toasts" aria-live="polite"></div>
 
 <script src="assets/js/data.js"></script>
 <script src="assets/js/map.js"></script>
 <script src="assets/js/guide.js"></script>
+<script src="assets/js/assistant.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>
