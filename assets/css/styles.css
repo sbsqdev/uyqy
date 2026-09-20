@@ -110,6 +110,14 @@ p{margin:0}
 .burger{display:none;flex-direction:column;gap:4px;background:none;border:0;cursor:pointer;padding:.4rem}
 .burger span{width:20px;height:2px;background:var(--ink);border-radius:2px}
 
+.lang{display:flex;gap:2px;background:var(--glass);border:1px solid var(--line-strong);border-radius:999px;padding:2px}
+.lang button{
+  font:inherit;font-size:.74rem;font-weight:800;letter-spacing:.04em;cursor:pointer;color:var(--ink-3);
+  background:none;border:0;border-radius:999px;padding:.3rem .55rem;transition:background .18s,color .18s;
+}
+.lang button:hover{color:var(--ink)}
+.lang button.on{background:var(--ink);color:var(--sea-950)}
+
 /* ── hero ── */
 .hero{position:relative;padding:clamp(2.6rem,6vw,4.6rem) 0 clamp(1.6rem,3vw,2.4rem);overflow:hidden}
 .hero-glow{
