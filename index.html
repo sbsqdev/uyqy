@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Кильватер — карта городов, где швартуются регаты</title>
+<meta name="description" content="Карта точек в регатных городах: что поесть, что увидеть, чем заняться. ИИ-гид, профиль участника, очки, бонусы и рефералы.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⛵</text></svg>">
+</head>
+<body>
+
+<div class="bg-grain" aria-hidden="true"></div>
+
+<header class="topbar" id="top">
+  <a class="brand" href="#top">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" width="30" height="30"><path d="M16 3 L25 21 H7 Z" fill="currentColor" opacity=".9"/><path d="M4 25 h24 c-2 4 -6 5 -12 5 s-10 -1 -12 -5z" fill="currentColor" opacity=".45"/></svg>
+    </span>
+    <span class="brand-text">Кильватер<em>карта регатных городов</em></span>
+  </a>
+
+  <nav class="nav" id="nav">
+    <a href="#map" data-nav>Карта</a>
+    <a href="#collections" data-nav>Подборки</a>
+    <a href="#regattas" data-nav>Регаты</a>
+    <a href="#guide" data-nav>ИИ-гид</a>
+    <a href="#profile" data-nav>Профиль</a>
+  </nav>
+
+  <div class="topbar-right">
+    <button class="pts-chip" id="ptsChip" type="button" title="Мои очки">
+      <span class="pts-dot" aria-hidden="true"></span>
+      <b id="ptsChipValue">0</b><span class="pts-unit">очков</span>
+    </button>
+    <button class="btn btn-primary btn-sm" data-scroll="#guide" type="button">Спросить гида</button>
+    <button class="burger" id="burger" type="button" aria-label="Меню"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main>
+  <!-- ══ HERO ══ -->
+  <section class="hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="wrap hero-inner">
+      <div class="hero-copy">
+        <span class="eyebrow"><i class="live-dot"></i>Сезон 2026 · <span id="eyebrowCities">3</span> города · <span id="eyebrowPoints">36</span> проверенных точек</span>
+        <h1>Вы приехали на регату.<br><span class="grad">Город — это вторая половина поездки.</span></h1>
+        <p class="lede">Кильватер — карта для тех, кто ходит на регаты ради удовольствия. Где поесть рыбу после финиша, куда идти в день без ветра, где смотреть закат и чинить порванный парус. Всё привязано к вашему профилю: чек-ины приносят очки, очки — бонусы, друзья по ссылке — ещё очки.</p>
+        <div class="hero-cta">
+          <button class="btn btn-primary" data-scroll="#map" type="button">Открыть карту</button>
+          <button class="btn btn-ghost" data-scroll="#guide" type="button">Спросить ИИ-гида<span class="kbd">↵</span></button>
+        </div>
+        <ul class="hero-stats">
+          <li><b id="statPoints">37</b><span>точек на карте</span></li>
+          <li><b>4</b><span>регаты в календаре</span></li>
+          <li><b id="statCheckins">0</b><span>ваших чек-инов</span></li>
+        </ul>
+      </div>
+
+      <aside class="hero-card" id="heroCard">
+        <div class="hc-head">
+          <span class="hc-label">Ближайшая регата</span>
+          <span class="hc-badge" id="hcBadge">через 42 дня</span>
+        </div>
+        <h3 id="hcName">Göcek Race Week</h3>
+        <p class="hc-sub" id="hcCity">Гёчек · Турция, залив Фетхие</p>
+        <div class="hc-rows">
+          <div><span>Ветер</span><b id="hcWind">Мелтеми, 8–14 уз.</b></div>
+          <div><span>Вода</span><b id="hcWater">+24 °C</b></div>
+          <div><span>Флот</span><b id="hcFleet">ORC, Bavaria 46</b></div>
+        </div>
+        <div class="hc-foot">
+          <button class="btn btn-soft btn-sm" id="hcJoin" type="button">Я иду · +400 очков</button>
+          <button class="btn btn-link btn-sm" data-scroll="#regattas" type="button">Весь календарь</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ══ КАРТА ══ -->
+  <section class="section" id="map">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="sec-kicker">Карта точек</span>
+          <h2>Что поделать, что поесть, что увидеть</h2>
+        </div>
+        <p class="sec-note">Выберите город регаты — карта, фильтры и карточки обновятся. Чек-ин в точке начисляет очки в профиль.</p>
+      </div>
+
+      <div class="city-tabs" id="cityTabs" role="tablist" aria-label="Города"></div>
+
+      <div class="city-meta" id="cityMeta"></div>
+
+      <div class="map-layout">
+        <div class="map-side">
+          <div class="search-box">
+            <span aria-hidden="true">⌕</span>
+            <input type="search" id="searchInput" placeholder="Рыба, закат, SUP, ремонт парусов…" aria-label="Поиск по точкам">
+          </div>
+          <div class="filters" id="filters" role="group" aria-label="Категории"></div>
+          <div class="poi-list" id="poiList"></div>
+        </div>
+
+        <div class="map-stage">
+          <div class="map-canvas" id="mapCanvas">
+            <svg class="map-svg" id="mapSvg" role="img" aria-label="Стилизованная карта акватории"></svg>
+            <div class="pins" id="pins"></div>
+            <div class="map-legend" id="mapLegend"></div>
+            <div class="compass" aria-hidden="true">
+              <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="currentColor" stroke-opacity=".35"/><path d="M30 8 L35 30 L30 26 L25 30 Z" fill="currentColor"/><path d="M30 52 L25 30 L30 34 L35 30 Z" fill="currentColor" opacity=".35"/><text x="30" y="7" text-anchor="middle" font-size="8" fill="currentColor">N</text></svg>
+            </div>
+          </div>
+
+          <div class="poi-detail" id="poiDetail" hidden></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ ПОДБОРКИ ══ -->
+  <section class="section section-alt" id="collections">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="sec-kicker">Подборки</span>
+          <h2>Чем себя занять — по ситуации</h2>
+        </div>
+        <p class="sec-note">Собраны под реальные сценарии регатной недели, а не по рубрикам справочника.</p>
+      </div>
+      <div class="coll-grid" id="collGrid"></div>
+    </div>
+  </section>
+
+  <!-- ══ РЕГАТЫ ══ -->
+  <section class="section" id="regattas">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="sec-kicker">Календарь</span>
+          <h2>Регаты сезона</h2>
+        </div>
+        <p class="sec-note">Отметьтесь в регате — очки упадут в профиль, а город автоматически станет вашим на карте.</p>
+      </div>
+      <div class="reg-grid" id="regGrid"></div>
+    </div>
+  </section>
+
+  <!-- ══ ИИ-ГИД ══ -->
+  <section class="section section-alt" id="guide">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="sec-kicker">ИИ-гид</span>
+          <h2>Спросите так, как спросили бы местного</h2>
+        </div>
+        <p class="sec-note">Гид знает все точки города, ваш уровень, очки и бонусы. Отвечает конкретно: место, цена, время, почему туда.</p>
+      </div>
+
+      <div class="guide-layout">
+      <div class="chat" id="chat">
+        <div class="chat-head">
+          <div class="chat-avatar" aria-hidden="true">⛵</div>
+          <div>
+            <b>Гид по городу <span id="chatCity">Гёчек</span></b>
+            <span class="chat-status"><i class="live-dot"></i>на связи</span>
+          </div>
+          <button class="btn btn-link btn-sm" id="chatReset" type="button">Очистить</button>
+        </div>
+        <div class="chat-log" id="chatLog" aria-live="polite"></div>
+        <div class="chat-chips" id="chatChips"></div>
+        <form class="chat-input" id="chatForm">
+          <input id="chatInput" type="text" autocomplete="off" placeholder="Например: где поесть рыбу после финиша?" aria-label="Вопрос гиду">
+          <button class="btn btn-primary btn-sm" type="submit">Спросить</button>
+        </form>
+      </div>
+
+      <aside class="guide-aside">
+        <div class="card">
+          <h3>Что знает гид</h3>
+          <ul class="ga-list">
+            <li><span><b id="gaPoints">12</b> точек города <span id="gaCity">Гёчек</span> — с ценами и часами</span></li>
+            <li><span>Ваш уровень, очки и уже сделанные чек-ины</span></li>
+            <li><span>Календарь регат и сколько очков даёт участие</span></li>
+            <li><span>Сценарии недели: штиль, вечер после гонки, день с детьми</span></li>
+          </ul>
+        </div>
+        <div class="card ga-facts">
+          <h3>Город сейчас</h3>
+          <div class="ga-row"><span>Сезон</span><b id="gaSeason">—</b></div>
+          <div class="ga-row"><span>Ветер</span><b id="gaWind">—</b></div>
+          <div class="ga-row"><span>Вода</span><b id="gaWater">—</b></div>
+          <div class="ga-row"><span>Регата</span><b id="gaRegatta">—</b></div>
+        </div>
+      </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ ПРОФИЛЬ ══ -->
+  <section class="section" id="profile">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="sec-kicker">Профиль</span>
+          <h2>Ваш кильватерный след</h2>
+        </div>
+        <p class="sec-note">Очки, уровень, регаты, награды и реферальная программа — в одном месте.</p>
+      </div>
+
+      <div class="profile-grid">
+        <article class="card profile-card">
+          <div class="pf-top">
+            <div class="avatar" id="avatar">АТ</div>
+            <div class="pf-id">
+              <input class="pf-name" id="pfName" value="Алина Т." aria-label="Имя в профиле" maxlength="24">
+              <span class="pf-role" id="pfRole">Юнга · экипаж «Кильватер»</span>
+            </div>
+            <div class="pf-pts"><b id="pfPts">0</b><span>очков</span></div>
+          </div>
+
+          <div class="level">
+            <div class="level-row"><span id="lvCur">Юнга</span><span id="lvNext">до уровня «Матрос» — 500 очков</span></div>
+            <div class="level-bar"><i id="lvFill" style="width:0%"></i></div>
+            <div class="level-ticks" id="lvTicks"></div>
+          </div>
+
+          <div class="pf-stats">
+            <div><b id="pfCheckins">0</b><span>чек-инов</span></div>
+            <div><b id="pfRegattas">0</b><span>регат</span></div>
+            <div><b id="pfRefs">0</b><span>друзей</span></div>
+            <div><b id="pfCities">0</b><span>городов</span></div>
+          </div>
+        </article>
+
+        <article class="card ref-card">
+          <h3>Рефералы</h3>
+          <p class="muted">Друг регистрируется по ссылке и идёт на регату — вам 250 очков, ему 150 на старте.</p>
+          <div class="ref-link">
+            <input id="refLink" readonly aria-label="Реферальная ссылка">
+            <button class="btn btn-soft btn-sm" id="refCopy" type="button">Скопировать</button>
+          </div>
+          <div class="ref-progress">
+            <div class="ref-dots" id="refDots"></div>
+            <span class="muted" id="refHint">0 из 5 друзей · на пятом — каюта на переходе</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="refSim" type="button">Пригласить друга (демо)</button>
+        </article>
+
+        <article class="card rewards-card">
+          <h3>Бонусы за очки</h3>
+          <div class="rewards" id="rewards"></div>
+        </article>
+
+        <article class="card log-card">
+          <h3>История</h3>
+          <ul class="log" id="activityLog"><li class="log-empty">Пока пусто. Сделайте первый чек-ин на карте.</li></ul>
+          <button class="btn btn-link btn-sm" id="resetAll" type="button">Сбросить прогресс</button>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <div>
+      <b>Кильватер</b>
+      <p class="muted">Демо-проект: карта точек регатных городов, ИИ-гид, профиль с очками и рефералами. Названия заведений вымышлены, прогресс хранится локально в браузере.</p>
+    </div>
+    <nav class="footer-nav">
+      <a href="#map">Карта</a><a href="#regattas">Регаты</a><a href="#guide">ИИ-гид</a><a href="#profile">Профиль</a>
+    </nav>
+  </div>
+</footer>
+
+<div class="toast-wrap" id="toasts" aria-live="polite"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/map.js"></script>
+<script src="assets/js/guide.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
