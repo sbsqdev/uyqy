@@ -85,3 +85,18 @@ const res = await fetch('/api/guide', {
 
 Контент демонстрационный: названия заведений, цены и количество мест вымышлены.
 Географические ориентиры и регатные города — реальные, карта стилизованная, не навигационная.
+
+## Деплой на Vercel
+
+Сайт статический, сборки нет — Vercel разворачивает его как есть.
+
+**Через интерфейс:** vercel.com → Add New → Project → импорт `sbsqdev/uyqy` →
+Framework Preset: **Other**, Root Directory: `./`, Build Command и Output Directory оставить пустыми → Deploy.
+
+**Через CLI:**
+
+```bash
+npx vercel --prod
+```
+
+`vercel.json` уже в репозитории: чистые URL без `.html`, кэш на статику и базовые security-заголовки.
