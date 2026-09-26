@@ -23,16 +23,16 @@ const Assistant = (() => {
     },
     {
       id: 'venues',
-      test: q => has(q, ['venue', 'where do you sail', 'which cities', 'locations', 'newport', 'san francisco', 'miami', 'annapolis', 'chesapeake',
-                         'акватор', 'где вы ходите', 'какие города', 'ньюпорт', 'сан-франциско', 'майами', 'аннаполис'])
+      test: q => has(q, ['venue', 'where do you sail', 'which cities', 'locations', 'newport', 'san francisco', 'miami', 'annapolis', 'chesapeake', 'new haven', 'newhaven', 'connecticut',
+                         'акватор', 'где вы ходите', 'какие города', 'ньюпорт', 'сан-франциско', 'майами', 'аннаполис', 'нью-хейвен'])
         && !has(q, ['easiest', 'hardest', 'beginner', 'first time', 'проще', 'сложнее', 'для новичка', 'первый раз']),
       run: () => ({
-        text: L(`Four venues, the same class of boat and the same coaching in each:\n\n`
+        text: L(`Five venues, the same class of boat and the same coaching in each:\n\n`
                 + DESTINATIONS.map(d => `• <b>${T(d.city)}</b> ${d.flag} — ${T(d.region)}. ${T(d.wind)}. ${T(d.season)}.`).join('\n')
-                + `\n\nAnnapolis is the tactical one, Newport the classic New England programme, San Francisco the hardest water on the list, Miami the warm winter option. Switch venue with the tabs above the map and the calendar follows.`,
-                `Четыре акватории, один класс лодки и один стандарт тренерской работы:\n\n`
+                + `\n\nAnnapolis is the tactical one, New Haven the cheapest week and a college fleet to train against, Newport the classic New England programme, San Francisco the hardest water on the list, Miami the warm winter option. Crews fly in from anywhere; switch venue with the tabs above the map and the calendar follows.`,
+                `Пять акваторий, один класс лодки и один стандарт тренерской работы:\n\n`
                 + DESTINATIONS.map(d => `• <b>${T(d.city)}</b> ${d.flag} — ${T(d.region)}. ${T(d.wind)}. ${T(d.season)}.`).join('\n')
-                + `\n\nАннаполис — самая тактическая вода, Ньюпорт — классическая Новая Англия, Сан-Франциско — самая сложная в списке, Майами — тёплая зима. Переключить можно вкладками над картой, календарь поедет следом.`),
+                + `\n\nАннаполис — самая тактическая вода, Нью-Хейвен — самая недорогая неделя и студенческий флот рядом для сравнения, Ньюпорт — классическая Новая Англия, Сан-Франциско — самая сложная в списке, Майами — тёплая зима. Экипажи прилетают откуда угодно; переключить можно вкладками над картой, календарь поедет следом.`),
         chips: L(['Which tier fits me?', 'Show the calendar', 'Which venue is easiest?'],
                  ['Какой тариф мне подходит?', 'Покажи календарь', 'Какая акватория проще?'])
       })
@@ -42,8 +42,8 @@ const Assistant = (() => {
       test: q => has(q, ['easiest', 'hardest', 'best for beginners', 'first time where', 'which venue',
                          'проще', 'сложнее', 'для новичка', 'куда первый раз', 'какая акватория']),
       run: () => ({
-        text: L(`Ranked by how hard the water is:\n\n<b>Miami</b> — warm, flat inside the bay, 12–20 knots. The easiest first week by some distance.\n<b>Annapolis</b> — light and shifty, shallow water, short courses. Physically the kindest; tactically the most demanding.\n<b>Newport</b> — colder water, proper tide, fog days. A real step up but forgiving.\n<b>San Francisco</b> — 25 knots and five knots of current. Come here second, not first.`,
-                `По сложности воды:\n\n<b>Майами</b> — тепло, гладкая вода внутри залива, 12–20 узлов. Самая простая первая неделя с большим отрывом.\n<b>Аннаполис</b> — слабый и переменчивый ветер, мелко, короткие дистанции. Физически самая щадящая вода и самая требовательная тактически.\n<b>Ньюпорт</b> — холоднее, настоящее течение, туманные дни. Шаг вверх, но щадящий.\n<b>Сан-Франциско</b> — 25 узлов и пять узлов течения. Сюда стоит ехать вторым заходом, а не первым.`),
+        text: L(`Ranked by how hard the water is:\n\n<b>Miami</b> — warm, flat inside the bay, 12–20 knots. The easiest first week by some distance.\n<b>New Haven</b> — short courses, moderate thermal breeze, a college fleet training next to you. The cheapest way to find out whether you like racing.\n<b>Annapolis</b> — light and shifty, shallow water. Physically the kindest; tactically the most demanding.\n<b>Newport</b> — colder water, proper tide, fog days. A real step up but forgiving.\n<b>San Francisco</b> — 25 knots and five knots of current. Come here second, not first.`,
+                `По сложности воды:\n\n<b>Майами</b> — тепло, гладкая вода внутри залива, 12–20 узлов. Самая простая первая неделя с большим отрывом.\n<b>Нью-Хейвен</b> — короткие дистанции, умеренный термический бриз и студенческий флот рядом. Самый недорогой способ понять, нравятся ли вам гонки.\n<b>Аннаполис</b> — слабый и переменчивый ветер, мелко. Физически самая щадящая вода и самая требовательная тактически.\n<b>Ньюпорт</b> — холоднее, настоящее течение, туманные дни. Шаг вверх, но щадящий.\n<b>Сан-Франциско</b> — 25 узлов и пять узлов течения. Сюда стоит ехать вторым заходом, а не первым.`),
         chips: L(['Show the calendar', 'Which tier fits me?', 'Do I need experience?'],
                  ['Покажи календарь', 'Какой тариф мне подходит?', 'Нужен ли опыт?'])
       })
@@ -132,8 +132,8 @@ const Assistant = (() => {
       test: q => has(q, ['fly', 'flight', 'airport', 'get there', 'get to', 'transfer', 'taxi', 'visa', 'arrive', 'travel', 'how far',
                          'перелёт', 'перелет', 'рейс', 'аэропорт', 'добрат', 'как доехат', 'трансфер', 'такси', 'виз', 'приеха']),
       run: (q, c) => ({
-        text: L(`<b>${T(c.dest.city)}</b> — ${T(c.dest.airport)}.\n\n${T(c.dest.travel)}\n\nGeneral rule for every venue: arrive the day before the first briefing, not the morning of it. A delayed bag has ruined more first days than bad weather. Check your own visa requirement before booking.`,
-                `<b>${T(c.dest.city)}</b> — ${T(c.dest.airport)}.\n\n${T(c.dest.travel)}\n\nОбщее правило для любой акватории: прилетайте за день до первого брифинга, а не утром в день брифинга. Задержанный багаж испортил больше первых дней, чем погода. Визовые требования проверяйте сами до брони.`),
+        text: L(`<b>${T(c.dest.city)}</b> — ${T(c.dest.airport)}.\n\n${T(c.dest.travel)}\n\nTwo rules wherever you are flying from: arrive the day before the first briefing rather than the morning of it, and check your own visa and entry requirements before you book. A delayed bag has ruined more first days than bad weather; a missing visa has ruined whole weeks.`,
+                `<b>${T(c.dest.city)}</b> — ${T(c.dest.airport)}.\n\n${T(c.dest.travel)}\n\nДва правила, откуда бы вы ни летели: прилетайте за день до первого брифинга, а не утром в день брифинга, и заранее проверяйте свои визовые требования. Задержанный багаж испортил больше первых дней, чем погода, а несделанная виза — целые недели.`),
         chips: L(['Money and cards?', 'What do I pack?', 'What is included?'],
                  ['Деньги и карты?', 'Что брать с собой?', 'Что входит в цену?'])
       })
@@ -143,8 +143,8 @@ const Assistant = (() => {
       test: q => has(q, ['money', 'card', 'cash', 'atm', 'currency', 'tip', 'exchange', 'payment',
                          'деньги', 'карт', 'наличн', 'банкомат', 'валют', 'чаевы', 'обмен', 'оплат']),
       run: (q, c) => ({
-        text: L(`Cards work at every venue we run, and in the US you will barely touch cash at all. Keep about $50 in notes for tips, a taxi and the crew kitty.\n\nTipping in the US runs 15–20% in restaurants and a few dollars per bag for the transfer. Outside the US, check the local norm — the crew assistant for that venue will tell you when you pick it.\n\nBudget $250–400 for the week ashore: food aboard, dinners in town, the transfer.`,
-                `Карты принимают во всех акваториях, где мы работаем, а в США наличные почти не понадобятся: держите долларов пятьдесят на чаевые, такси и общую кассу экипажа.\n\nЧаевые в США — 15–20% в ресторанах и по паре долларов за сумку на трансфере. Вне США смотрите местную норму: ассистент подскажет по конкретной акватории.\n\nНа неделю на берегу заложите $250–400: еда на борту, ужины в городе, трансфер.`),
+        text: L(`Berths are priced in US dollars wherever you book from, and cards work at every venue. Keep about $50 in local notes for tips, a taxi and the crew kitty.\n\nAt the venues in this demo, tipping runs 15–20% in restaurants and a few dollars a bag on the transfer. Tell your bank you are travelling, or the first dockside payment will be the one it declines.\n\nBudget $250–400 for the week ashore: food aboard, dinners in town, the transfer.`,
+                `Места считаются в долларах, из какой бы страны вы ни бронировали, и карты принимают во всех акваториях. Держите наличными около пятидесяти долларов на чаевые, такси и общую кассу экипажа.\n\nВ акваториях этого демо чаевые — 15–20% в ресторанах и пара долларов за сумку на трансфере. Предупредите банк о поездке, иначе первый же платёж на причале он и отклонит.\n\nНа неделю на берегу заложите $250–400: еда на борту, ужины в городе, трансфер.`),
         chips: L(['How do I get there?', 'What is included?', 'Where to eat?'],
                  ['Как добираться?', 'Что входит в цену?', 'Где поесть?'])
       })

@@ -120,7 +120,7 @@ p{margin:0}
 .lang button.on{background:var(--ink);color:var(--sea-950)}
 
 /* ── акватории ── */
-.venue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem}
+.venue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:.8rem}
 .venue{
   display:flex;flex-direction:column;gap:.35rem;text-align:left;font:inherit;color:var(--ink);cursor:pointer;
   border:1px solid var(--line);border-radius:var(--radius);padding:1.1rem;

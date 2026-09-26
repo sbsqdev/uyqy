@@ -10,14 +10,14 @@ const I18N = {
       eyebrow: '{city} · season 2027 · {n} berths left',
       h1a: 'Race a 36-foot offshore boat.',
       h1b: 'No experience required on day one.',
-      lede: 'Four venues, one class of boat, the same coaching standard. You fly in on Saturday; by Wednesday you are trimming a spinnaker in 20 knots and arguing about the start line over dinner. A properly prepared race boat, a coach beside you, the logistics handled and the town on a map.',
+      lede: 'Five venues, one class of boat, the same coaching standard. You fly in on Saturday; by Wednesday you are trimming a spinnaker in 20 knots and arguing about the start line over dinner. A properly prepared race boat, a coach beside you, the logistics handled and the town on a map.',
       ctaQuiz: 'Find my berth', ctaQuizNote: '60 sec', ctaCal: 'See the calendar',
       statTiers: 'crew tiers', statEvents: 'events in 2027', statCheckins: 'your check-ins'
     },
     hc: { label: 'Next event', fleet: 'Fleet', wind: 'Wind', spots: 'Berths left',
           join: 'Hold a berth · +{n} points', held: '✓ Berth held', calendar: 'Full calendar' },
     venue: { kicker: 'Venues', h2: 'Pick where you want to race',
-             note: 'Same class of boat, same coaching standard, four very different weeks of sailing. The map, the calendar and both assistants follow your choice.' },
+             note: 'Same class of boat, same coaching standard, five very different weeks of sailing. Crews fly in from anywhere — the map, the calendar and both assistants follow whichever venue you pick.' },
     berths: { kicker: 'Berths', h2: 'Same boat, three ways to sail her',
               note: 'Every tier races the full event. What changes is how much of the boat is yours: the rail, one position, or the wheel.',
               choose: 'Choose {name}', chosen: '✓ Your tier', left: '{n} left this season' },
@@ -67,7 +67,7 @@ const I18N = {
     platform: {
       kicker: 'For race programmes',
       h2: 'This whole page is the product',
-      note: 'Charter Key is the platform a club or a team runs its crew side on. The venues, boats and prices here are demo data — swap them for yours and the funnel, the assistants and the account all follow.',
+      note: 'Charter Key is the platform a club or a team runs its crew side on, in any country and any language. The venues, boats and prices here are demo data — swap them for yours and the funnel, the assistants and the account all follow.',
       c1t: 'Sell berths, not seats',
       c1l: 'Three tiers on the same boat, real scarcity per event, and a three-question quiz that routes people to the tier they will actually enjoy. Fewer refunds, higher average booking.',
       c2t: 'Answer the midnight email once',
@@ -133,14 +133,14 @@ const I18N = {
       eyebrow: '{city} · сезон 2027 · свободных мест: {n}',
       h1a: 'Гоночная яхта 36 футов.',
       h1b: 'Опыт в первый день не нужен.',
-      lede: 'Четыре акватории, один класс лодки, один стандарт тренерской работы. Вы прилетаете в субботу, а к среде уже работаете со спинакером в 20 узлов и спорите про линию старта за ужином. Подготовленная гоночная яхта, тренер рядом, логистика на нас и город картой.',
+      lede: 'Пять акваторий, один класс лодки, один стандарт тренерской работы. Вы прилетаете в субботу, а к среде уже работаете со спинакером в 20 узлов и спорите про линию старта за ужином. Подготовленная гоночная яхта, тренер рядом, логистика на нас и город картой.',
       ctaQuiz: 'Подобрать место', ctaQuizNote: '60 сек', ctaCal: 'Смотреть календарь',
       statTiers: 'тарифа в экипаже', statEvents: 'события в 2027', statCheckins: 'ваших чек-инов'
     },
     hc: { label: 'Ближайшее событие', fleet: 'Флот', wind: 'Ветер', spots: 'Свободно мест',
           join: 'Забронировать · +{n} очков', held: '✓ Место забронировано', calendar: 'Весь календарь' },
     venue: { kicker: 'Акватории', h2: 'Выберите, где гоняться',
-             note: 'Один класс лодки и один стандарт тренерской работы — но четыре совершенно разные недели. Карта, календарь и оба ИИ переключаются вместе с выбором.' },
+             note: 'Один класс лодки и один стандарт тренерской работы — но пять совершенно разных недель. Экипажи прилетают откуда угодно, а карта, календарь и оба ИИ переключаются вместе с выбором акватории.' },
     berths: { kicker: 'Тарифы', h2: 'Одна лодка, три способа на ней ходить',
               note: 'Все тарифы гоняют полное событие. Разница в том, какая часть лодки ваша: перила, одна позиция или штурвал.',
               choose: 'Выбрать {name}', chosen: '✓ Ваш тариф', left: 'осталось мест: {n}' },
@@ -190,7 +190,7 @@ const I18N = {
     platform: {
       kicker: 'Для гоночных программ',
       h2: 'Эта страница и есть продукт',
-      note: 'Charter Key — платформа, на которой клуб или команда ведёт всё, что касается экипажа. Акватории, лодки и цены здесь демонстрационные: подставьте свои, и воронка, ассистенты и аккаунт поедут следом.',
+      note: 'Charter Key — платформа, на которой клуб или команда ведёт всё, что касается экипажа, в любой стране и на любом языке. Акватории, лодки и цены здесь демонстрационные: подставьте свои, и воронка, ассистенты и аккаунт поедут следом.',
       c1t: 'Продавать места, а не кресла',
       c1l: 'Три тарифа на одной лодке, настоящий дефицит по каждому событию и квиз из трёх вопросов, который отправляет человека в тариф, где ему будет хорошо. Меньше возвратов, выше средний чек.',
       c2t: 'Ответить на полуночное письмо один раз',
@@ -251,11 +251,12 @@ const I18N = {
 
 const Lang = (() => {
   const KEY = 'charterkey.lang';
+  /* Английский — точка входа для всех. Русский включается только вручную
+     и запоминается на этом устройстве. */
   let lang = 'en';
   try {
     const saved = localStorage.getItem(KEY);
     if (saved === 'en' || saved === 'ru') lang = saved;
-    else if (/^(ru|uk|be|kk|ky|uz|tg|hy|az)/i.test(navigator.language || '')) lang = 'ru';
   } catch {}
 
   const get = () => lang;
