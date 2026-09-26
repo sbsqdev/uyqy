@@ -76,6 +76,7 @@ p{margin:0}
 .btn-link:hover{color:var(--ink)}
 .btn[disabled]{opacity:.45;cursor:not-allowed;transform:none!important;box-shadow:none}
 .kbd{font-size:.7rem;border:1px solid var(--line-strong);border-radius:6px;padding:.05rem .32rem;color:var(--ink-3)}
+.btn-primary .kbd{color:rgba(4,32,42,.7);border-color:rgba(4,32,42,.3)}
 
 /* ── шапка ── */
 .topbar{
@@ -109,6 +110,32 @@ p{margin:0}
 .pts-unit{color:var(--ink-3);font-size:.75rem}
 .burger{display:none;flex-direction:column;gap:4px;background:none;border:0;cursor:pointer;padding:.4rem}
 .burger span{width:20px;height:2px;background:var(--ink);border-radius:2px}
+
+.lang{display:flex;gap:2px;background:var(--glass);border:1px solid var(--line-strong);border-radius:999px;padding:2px}
+.lang button{
+  font:inherit;font-size:.74rem;font-weight:800;letter-spacing:.04em;cursor:pointer;color:var(--ink-3);
+  background:none;border:0;border-radius:999px;padding:.3rem .55rem;transition:background .18s,color .18s;
+}
+.lang button:hover{color:var(--ink)}
+.lang button.on{background:var(--ink);color:var(--sea-950)}
+
+/* ── акватории ── */
+.venue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem}
+.venue{
+  display:flex;flex-direction:column;gap:.35rem;text-align:left;font:inherit;color:var(--ink);cursor:pointer;
+  border:1px solid var(--line);border-radius:var(--radius);padding:1.1rem;
+  background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+  transition:transform .22s var(--ease),border-color .22s,background .22s;
+}
+.venue:hover{transform:translateY(-4px);background:var(--glass-2)}
+.venue[aria-selected="true"]{border-color:var(--accent,var(--aqua));background:linear-gradient(165deg,rgba(61,218,215,.12),rgba(255,255,255,.02))}
+.venue[aria-selected="true"] .venue-top b{color:var(--accent,var(--aqua))}
+.venue-top{display:flex;align-items:center;gap:.5rem;font-size:1.15rem;font-weight:800;letter-spacing:-.02em}
+.venue-flag{font-size:1.1rem}
+.venue-region{font-size:.76rem;color:var(--ink-3)}
+.venue-line{font-size:.85rem;color:var(--ink-2);line-height:1.45;margin-top:.3rem}
+.venue-foot{display:flex;justify-content:space-between;gap:.6rem;margin-top:auto;padding-top:.8rem;font-size:.74rem;color:var(--ink-3)}
+.venue-foot .scarce{color:var(--sun);font-weight:700}
 
 /* ── тарифы мест ── */
 .tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1rem;align-items:stretch}
@@ -196,6 +223,15 @@ p{margin:0}
 .club-card h3{font-size:1.4rem;margin:.3rem 0 .4rem}
 .club-card .tier-list li::before{background:var(--sun)}
 .club-card .btn{width:100%;justify-content:center;margin-top:.4rem}
+
+.plat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}
+.plat{
+  border:1px solid var(--line);border-radius:var(--radius);padding:1.3rem;
+  background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+}
+.plat h3{font-size:1.1rem;margin-bottom:.5rem}
+.plat p{font-size:.88rem;color:var(--ink-2);line-height:1.5}
+.plat-cta{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-top:1.3rem}
 
 /* ── FAQ ── */
 .faq{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:.7rem;align-items:start}
@@ -386,6 +422,14 @@ p{margin:0}
 .reg h3{font-size:1.15rem}
 .reg-city{font-size:.82rem;color:var(--ink-3)}
 .reg-line{font-size:.85rem;color:var(--ink-2);margin:.15rem 0 .3rem}
+.reg-venue{
+  align-self:flex-start;font:inherit;font-size:.74rem;font-weight:700;cursor:pointer;color:var(--ink-2);
+  background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:.2rem .6rem;
+  transition:border-color .18s,color .18s;
+}
+.reg-venue:hover{border-color:var(--aqua);color:var(--ink)}
+.reg.here{border-color:var(--line-strong)}
+.reg.here .reg-venue{border-color:rgba(61,218,215,.45);color:var(--aqua)}
 .reg-rows .scarce{color:var(--sun);font-weight:700}
 .reg-rows{font-size:.82rem;color:var(--ink-2);display:flex;flex-direction:column;gap:.25rem;margin-top:.3rem}
 .reg-foot{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-top:auto;padding-top:.7rem;flex-wrap:wrap}

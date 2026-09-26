@@ -1,4 +1,4 @@
-/* Charter Key — state, account, offer sections, map, two assistants */
+/* Charter Key — state, account, venues, offer sections, map, two assistants, language */
 
 (() => {
   'use strict';
@@ -7,12 +7,12 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const money = n => '$' + n.toLocaleString('en-US');
-  const KEY = 'charterkey.v2';
+  const KEY = 'charterkey.v3';
 
   const DEFAULT = {
     registered: false, name: '', email: '', refCode: '', invitedBy: '',
-    points: 0, checkins: [], events: [], referrals: 0, claimed: [], courses: [],
-    club: false, tier: '', log: []
+    venue: 'newport', points: 0, checkins: [], events: [], referrals: 0,
+    claimed: [], courses: [], club: false, tier: '', log: []
   };
 
   let state = load();
@@ -20,16 +20,19 @@
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
-      return raw ? { ...DEFAULT, ...JSON.parse(raw) } : { ...DEFAULT };
+      const s = raw ? { ...DEFAULT, ...JSON.parse(raw) } : { ...DEFAULT };
+      if (!DESTINATIONS.some(d => d.id === s.venue)) s.venue = DEFAULT.venue;
+      return s;
     } catch { return { ...DEFAULT }; }
   }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
 
-  const D = DESTINATION;
-  const pointById = id => D.points.find(p => p.id === id);
+  const dest = () => DESTINATIONS.find(d => d.id === state.venue) || DESTINATIONS[0];
+  const cityOf = id => DESTINATIONS.find(d => d.id === id);
+  const pointById = id => dest().points.find(p => p.id === id);
   const levelOf = pts => [...LEVELS].reverse().find(l => pts >= l.from) || LEVELS[0];
   const nextLevel = pts => LEVELS.find(l => l.from > pts) || null;
-  const displayName = () => state.registered ? state.name : 'Guest';
+  const displayName = () => state.registered ? state.name : (Lang.get() === 'ru' ? 'Гость' : 'Guest');
   const spotsLeft = r => Math.max(0, r.spots - (state.events.includes(r.id) ? 1 : 0));
 
   const catStyle = cat => {
@@ -43,15 +46,15 @@
   const catIcon = cat => CATEGORIES.find(c => c.id === cat).icon;
 
   /* ────────── points, log, toasts ────────── */
-  function addPoints(n, label) {
+  function addPoints(n, logKey, vars) {
     state.points += n;
-    state.log.unshift({ t: Date.now(), label, n });
+    state.log.unshift({ t: Date.now(), key: logKey, vars: vars || {}, n });
     state.log = state.log.slice(0, 40);
     save();
     renderProfile();
     const chip = $('#ptsChip');
     chip.classList.remove('bump'); void chip.offsetWidth; chip.classList.add('bump');
-    toast(`<b>+${n}</b> points · ${esc(label)}`);
+    toast(t('toast.points', { n, label: t('logLabel.' + logKey, vars) }));
   }
 
   function toast(html) {
@@ -73,16 +76,16 @@
   }
   const closeAuth = () => { $('#authModal').hidden = true; document.body.style.overflow = ''; };
 
-  function requireAuth(reason) {
+  function requireAuth(reasonKey) {
     if (state.registered) return true;
-    openAuth(reason);
+    openAuth(t('toast.' + reasonKey));
     return false;
   }
 
   function register(name, email, promo) {
     const err = $('#authError');
-    if (name.trim().length < 2) { err.textContent = 'Add your name — it goes on the crew list.'; err.hidden = false; return; }
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email.trim())) { err.textContent = 'Check the email: it should look like name@domain.com'; err.hidden = false; return; }
+    if (name.trim().length < 2) { err.textContent = t('modal.errName'); err.hidden = false; return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email.trim())) { err.textContent = t('modal.errEmail'); err.hidden = false; return; }
 
     state.registered = true;
     state.name = name.trim();
@@ -92,32 +95,64 @@
     save();
     closeAuth();
 
-    addPoints(BONUS.signup, 'Signed up');
-    if (state.invitedBy) addPoints(BONUS.invitee, `Friend's code ${state.invitedBy}`);
+    addPoints(BONUS.signup, 'signup');
+    if (state.invitedBy) addPoints(BONUS.invitee, 'promo', { code: state.invitedBy });
     renderAll();
     $('#magnet').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   function makeCode(name) {
-    const first = (name.trim().split(/\s+/)[0] || 'CREW').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 10) || 'CREW';
-    return `CK-${first}-${1000 + Math.floor(Math.random() * 8999)}`;
+    const map = { А:'A',Б:'B',В:'V',Г:'G',Д:'D',Е:'E',Ж:'ZH',З:'Z',И:'I',Й:'Y',К:'K',Л:'L',М:'M',Н:'N',О:'O',П:'P',Р:'R',С:'S',Т:'T',У:'U',Ф:'F',Х:'H',Ц:'C',Ч:'CH',Ш:'SH',Щ:'SCH',Ы:'Y',Э:'E',Ю:'YU',Я:'YA',Ь:'',Ъ:'' };
+    const first = (name.trim().split(/\s+/)[0] || 'CREW').toUpperCase();
+    const lat = [...first].map(c => map[c] ?? c).join('').replace(/[^A-Z]/g, '').slice(0, 10) || 'CREW';
+    return `CK-${lat}-${1000 + Math.floor(Math.random() * 8999)}`;
+  }
+
+  /* ────────── venues ────────── */
+  function renderVenues() {
+    $('#venueTabs').innerHTML = DESTINATIONS.map(d => {
+      const ev = REGATTAS.filter(r => r.city === d.id);
+      const left = ev.reduce((a, r) => a + spotsLeft(r), 0);
+      return `
+        <button class="venue" role="tab" data-venue="${d.id}" aria-selected="${d.id === state.venue}" style="--accent:${d.accent}" type="button">
+          <span class="venue-top"><span class="venue-flag">${d.flag}</span><b>${esc(T(d.city))}</b></span>
+          <span class="venue-region">${esc(T(d.region))}</span>
+          <span class="venue-line">${esc(T(d.blurb))}</span>
+          <span class="venue-foot">
+            <span>${esc(T(d.season))}</span>
+            <span class="${left <= 3 ? 'scarce' : ''}">${t('cal.left', { n: left })}</span>
+          </span>
+        </button>`;
+    }).join('');
+  }
+
+  function switchVenue(id) {
+    if (state.venue === id) return;
+    state.venue = id;
+    activePoi = null; query = ''; filter = 'all';
+    $('#searchInput').value = '';
+    save();
+    MapView.render(dest());
+    renderAll();
+    resetChat();
+    toast(t('toast.venue', { city: esc(T(dest().city)) }));
   }
 
   /* ────────── berth tiers ────────── */
   function renderTiers() {
-    $('#tierGrid').innerHTML = TIERS.map(t => `
-      <article class="tier ${t.featured ? 'featured' : ''} ${state.tier === t.id ? 'chosen' : ''}">
-        ${t.featured ? '<span class="tier-flag">Most crews pick this</span>' : ''}
-        <span class="tier-tag">${esc(t.tag)}</span>
-        <h3>${esc(t.name)}</h3>
-        <div class="tier-price"><b>${money(t.price)}</b><span>${esc(t.unit)}</span></div>
-        <p class="tier-line">${esc(t.line)}</p>
-        <ul class="tier-list">${t.includes.map(i => `<li>${esc(i)}</li>`).join('')}</ul>
+    $('#tierGrid').innerHTML = TIERS.map(x => `
+      <article class="tier ${x.featured ? 'featured' : ''} ${state.tier === x.id ? 'chosen' : ''}">
+        ${x.featured ? `<span class="tier-flag">${esc(Lang.get() === 'ru' ? 'Выбирают чаще всего' : 'Most crews pick this')}</span>` : ''}
+        <span class="tier-tag">${esc(T(x.tag))}</span>
+        <h3>${esc(T(x.name))}</h3>
+        <div class="tier-price"><b>${money(x.price)}</b><span>${esc(T(x.unit))}</span></div>
+        <p class="tier-line">${esc(T(x.line))}</p>
+        <ul class="tier-list">${T(x.includes).map(i => `<li>${esc(i)}</li>`).join('')}</ul>
         <div class="tier-foot">
-          <button class="btn ${t.featured ? 'btn-primary' : 'btn-ghost'} btn-sm" data-tier="${t.id}" type="button">
-            ${state.tier === t.id ? '✓ Your tier' : 'Choose ' + esc(t.name)}
+          <button class="btn ${x.featured ? 'btn-primary' : 'btn-ghost'} btn-sm" data-tier="${x.id}" type="button">
+            ${state.tier === x.id ? esc(t('berths.chosen')) : esc(t('berths.choose', { name: T(x.name) }))}
           </button>
-          <span class="tier-spots ${t.spots <= 2 ? 'low' : ''}">${t.spots} left this season</span>
+          <span class="tier-spots ${x.spots <= 2 ? 'low' : ''}">${esc(t('berths.left', { n: x.spots }))}</span>
         </div>
       </article>`).join('');
   }
@@ -126,23 +161,20 @@
     state.tier = id;
     save();
     renderTiers();
-    const t = TIERS.find(x => x.id === id);
-    toast(`<b>${esc(t.name)}</b> selected · pick your event below`);
+    toast(t('toast.tierPicked', { name: esc(T(TIERS.find(x => x.id === id).name)) }));
     $('#calendar').scrollIntoView({ behavior: 'smooth' });
   }
 
   /* ────────── lead magnet ────────── */
   function renderMagnet() {
-    $('#magnetTitle').textContent = LEAD_MAGNET.title;
-    $('#magnetSub').textContent = LEAD_MAGNET.sub;
-    $('#magnetList').innerHTML = LEAD_MAGNET.items
+    $('#magnetTitle').textContent = T(LEAD_MAGNET.title);
+    $('#magnetSub').textContent = T(LEAD_MAGNET.sub);
+    $('#magnetList').innerHTML = T(LEAD_MAGNET.items)
       .map(i => `<li>${state.registered ? '✓ ' : ''}${esc(i)}</li>`).join('');
     $('#magnet').classList.toggle('unlocked', state.registered);
-    $('#magnetBtn').textContent = state.registered ? 'Open the checklist' : 'Unlock it free';
+    $('#magnetBtn').textContent = state.registered ? t('magnet.open') : t('magnet.unlock');
     $('#magnetBtn').toggleAttribute('data-auth', !state.registered);
-    $('#magnetNote').textContent = state.registered
-      ? 'Unlocked on your account. We email the printable version before your first event.'
-      : 'Free with an account. No card, no call, one minute.';
+    $('#magnetNote').textContent = state.registered ? t('magnet.noteOpen') : t('magnet.noteLocked');
   }
 
   /* ────────── quiz ────────── */
@@ -154,17 +186,17 @@
 
     if (quizStep >= QUIZ.length) {
       const best = Object.entries(quizScore).sort((a, b) => b[1] - a[1])[0][0];
-      const t = TIERS.find(x => x.id === best);
+      const x = TIERS.find(y => y.id === best);
       box.innerHTML = `
         <div class="quiz-result">
-          <span class="sec-kicker">Your match</span>
-          <h3>${esc(t.name)} — ${money(t.price)} <span class="muted">${esc(t.unit)}</span></h3>
-          <p class="quiz-why">${esc(t.line)}</p>
-          <ul class="tier-list">${t.includes.slice(0, 4).map(i => `<li>${esc(i)}</li>`).join('')}</ul>
+          <span class="sec-kicker">${esc(t('quiz.match'))}</span>
+          <h3>${esc(T(x.name))} — ${money(x.price)} <span class="muted">${esc(T(x.unit))}</span></h3>
+          <p class="quiz-why">${esc(T(x.line))}</p>
+          <ul class="tier-list">${T(x.includes).slice(0, 4).map(i => `<li>${esc(i)}</li>`).join('')}</ul>
           <div class="quiz-actions">
-            <button class="btn btn-primary" data-tier="${t.id}" type="button">Take the ${esc(t.name)} berth</button>
-            <button class="btn btn-ghost btn-sm" data-quiz-restart type="button">Start again</button>
-            <button class="btn btn-link btn-sm" data-ask-tier="${t.id}" type="button">Ask the assistant why</button>
+            <button class="btn btn-primary" data-tier="${x.id}" type="button">${esc(t('quiz.take', { name: T(x.name) }))}</button>
+            <button class="btn btn-ghost btn-sm" data-quiz-restart type="button">${esc(t('quiz.again'))}</button>
+            <button class="btn btn-link btn-sm" data-ask-tier="${x.id}" type="button">${esc(t('quiz.why'))}</button>
           </div>
         </div>`;
       return;
@@ -175,11 +207,11 @@
       <div class="quiz-card">
         <div class="quiz-progress">
           ${QUIZ.map((_, i) => `<i class="${i <= quizStep ? 'on' : ''}"></i>`).join('')}
-          <span>Question ${quizStep + 1} of ${QUIZ.length}</span>
+          <span>${esc(t('quiz.step', { i: quizStep + 1, n: QUIZ.length }))}</span>
         </div>
-        <h3>${esc(q.q)}</h3>
+        <h3>${esc(T(q.q))}</h3>
         <div class="quiz-options">
-          ${q.options.map(o => `<button class="quiz-option" data-answer="${o.id}" type="button">${esc(o.label)}</button>`).join('')}
+          ${q.options.map(o => `<button class="quiz-option" data-answer="${o.id}" type="button">${esc(T(o.label))}</button>`).join('')}
         </div>
       </div>`;
   }
@@ -201,141 +233,148 @@
 
   /* ────────── calendar ────────── */
   function renderEvents() {
-    $('#regGrid').innerHTML = REGATTAS.map(r => {
+    const order = [...REGATTAS].sort((a, b) => (a.city === state.venue ? -1 : 0) - (b.city === state.venue ? -1 : 0));
+    $('#regGrid').innerHTML = order.map(r => {
       const held = state.events.includes(r.id);
       const left = spotsLeft(r);
+      const city = cityOf(r.city);
       return `
-        <article class="reg ${held ? 'joined' : ''}">
+        <article class="reg ${held ? 'joined' : ''} ${r.city === state.venue ? 'here' : ''}">
           <div class="reg-top">
-            <span class="reg-level">${esc(r.level)}</span>
-            <span class="reg-date">${esc(r.date)}</span>
+            <span class="reg-level">${esc(T(r.level))}</span>
+            <span class="reg-date">${esc(T(r.date))}</span>
           </div>
-          <h3>${esc(r.name)}</h3>
-          <p class="reg-line">${esc(r.line)}</p>
+          <h3>${esc(T(r.name))}</h3>
+          <button class="reg-venue" data-venue="${r.city}" type="button">${city.flag} ${esc(T(city.city))}</button>
+          <p class="reg-line">${esc(T(r.line))}</p>
           <div class="reg-rows">
-            <span>Fleet: ${esc(r.fleet)}</span>
-            <span class="${left <= 2 ? 'scarce' : ''}">${left} berth${left === 1 ? '' : 's'} left</span>
+            <span>${esc(t('cal.fleet'))}: ${esc(T(r.fleet))}</span>
+            <span class="${left <= 2 ? 'scarce' : ''}">${left === 1 ? esc(t('cal.left1')) : esc(t('cal.left', { n: left }))}</span>
           </div>
           <div class="reg-foot">
             <button class="btn ${held ? 'btn-ghost' : 'btn-soft'} btn-sm" data-event="${r.id}" ${held ? 'disabled' : ''} type="button">
-              ${held ? '✓ Berth held' : `Hold a berth · +${r.pts}`}
+              ${held ? esc(t('cal.held')) : esc(t('cal.hold', { n: r.pts }))}
             </button>
-            <button class="btn btn-link btn-sm" data-scroll="#berths" type="button">Tiers</button>
+            <button class="btn btn-link btn-sm" data-scroll="#berths" type="button">${esc(t('cal.tiers'))}</button>
           </div>
         </article>`;
     }).join('');
   }
 
   function holdEvent(id) {
-    if (!requireAuth('Berths are held on an account — it takes a minute')) return;
+    if (!requireAuth('gateEvent')) return;
     if (state.events.includes(id)) return;
     const r = REGATTAS.find(x => x.id === id);
     state.events.push(id);
-    addPoints(r.pts, `Berth held: ${r.name}`);
-    renderEvents(); renderHero();
+    if (r.city !== state.venue) { state.venue = r.city; MapView.render(dest()); }
+    addPoints(r.pts, 'event', { name: T(r.name) });
+    renderAll();
   }
 
   /* ────────── academy + club ────────── */
   function renderAcademy() {
     $('#courseGrid').innerHTML = COURSES.map(c => {
       const owned = state.courses.includes(c.id);
-      const canPoints = state.registered && state.points >= c.pts;
       return `
         <article class="course ${owned ? 'owned' : ''}">
           <div class="course-top">
-            <span class="course-level">${esc(c.level)}</span>
-            <span class="course-time">${esc(c.time)}</span>
+            <span class="course-level">${esc(T(c.level))}</span>
+            <span class="course-time">${esc(T(c.time))}</span>
           </div>
-          <h3>${esc(c.title)}</h3>
-          <p class="course-line">${esc(c.line)}</p>
+          <h3>${esc(T(c.title))}</h3>
+          <p class="course-line">${esc(T(c.line))}</p>
           <div class="course-foot">
             ${owned
-              ? '<span class="course-owned">✓ In your library</span>'
-              : `<button class="btn btn-soft btn-sm" data-buy="${c.id}" type="button">Buy ${money(c.price)}</button>
-                 <button class="btn ${canPoints ? 'btn-ghost' : 'btn-ghost'} btn-sm" data-course-points="${c.id}" type="button">or ${c.pts} points</button>`}
+              ? `<span class="course-owned">${esc(t('academy.owned'))}</span>`
+              : `<button class="btn btn-soft btn-sm" data-buy="${c.id}" type="button">${esc(t('academy.buy', { price: money(c.price) }))}</button>
+                 <button class="btn btn-ghost btn-sm" data-course-points="${c.id}" type="button">${esc(t('academy.orPoints', { n: c.pts }))}</button>`}
           </div>
         </article>`;
     }).join('');
 
     $('#clubCard').innerHTML = `
-      <span class="sec-kicker">Membership</span>
-      <h3>The Club</h3>
-      <div class="tier-price"><b>${money(CLUB.price)}</b><span>${esc(CLUB.unit)}</span></div>
-      <p class="muted">or ${money(CLUB.annual)} a year</p>
-      <ul class="tier-list">${CLUB.perks.map(p => `<li>${esc(p)}</li>`).join('')}</ul>
+      <span class="sec-kicker">${esc(t('academy.membership'))}</span>
+      <h3>${esc(t('academy.club'))}</h3>
+      <div class="tier-price"><b>${money(CLUB.price)}</b><span>${esc(T(CLUB.unit))}</span></div>
+      <p class="muted">${esc(t('academy.perYear', { price: money(CLUB.annual) }))}</p>
+      <ul class="tier-list">${T(CLUB.perks).map(p => `<li>${esc(p)}</li>`).join('')}</ul>
       <button class="btn ${state.club ? 'btn-ghost' : 'btn-primary'} btn-sm" id="clubBtn" ${state.club ? 'disabled' : ''} type="button">
-        ${state.club ? '✓ Member' : 'Join the club'}
+        ${state.club ? esc(t('academy.member')) : esc(t('academy.join'))}
       </button>`;
   }
 
   function buyCourse(id, withPoints) {
-    if (!requireAuth('Courses are attached to an account')) return;
+    if (!requireAuth('gateCourse')) return;
     const c = COURSES.find(x => x.id === id);
     if (!c || state.courses.includes(id)) return;
 
     if (withPoints) {
       if (state.points < c.pts) {
-        toast(`<b>${c.pts - state.points}</b> points short of “${esc(c.title)}”`);
+        toast(t('toast.short', { n: c.pts - state.points, title: esc(T(c.title)) }));
         return;
       }
       state.points -= c.pts;
-      state.log.unshift({ t: Date.now(), label: `Course: ${c.title}`, n: -c.pts });
+      state.log.unshift({ t: Date.now(), key: 'course', vars: { title: T(c.title) }, n: -c.pts });
       state.courses.push(id);
       save(); renderAcademy(); renderProfile();
-      toast(`<b>${esc(c.title)}</b> unlocked with points`);
+      toast(t('toast.coursePoints', { title: esc(T(c.title)) }));
       return;
     }
     state.courses.push(id);
     save(); renderAcademy(); renderProfile();
-    toast(`Demo checkout: <b>${esc(c.title)}</b> added to your library`);
+    toast(t('toast.courseBuy', { title: esc(T(c.title)) }));
   }
 
   function joinClub() {
-    if (!requireAuth('Membership sits on an account')) return;
+    if (!requireAuth('gateClub')) return;
     if (state.club) return;
     state.club = true;
     save(); renderAcademy();
-    toast('Demo checkout: you are in the Club — 48h early access is on');
+    toast(t('toast.clubJoined'));
   }
 
   /* ────────── town map ────────── */
   let filter = 'all', query = '', activePoi = null;
 
-  const visiblePoints = () => D.points.filter(p => {
+  const visiblePoints = () => dest().points.filter(p => {
     const okCat = filter === 'all' || p.cat === filter;
     const q = query.trim().toLowerCase();
-    const hay = (p.name + ' ' + p.desc + ' ' + p.tags.join(' ')).toLowerCase();
+    const hay = (T(p.name) + ' ' + T(p.desc) + ' ' + p.tags.join(' ') + ' ' + (p.tagsRu || []).join(' ')).toLowerCase();
     return okCat && (!q || hay.includes(q));
   });
 
   function renderCity() {
+    const d = dest();
     $('#cityMeta').innerHTML = `
-      <span>Season: <b>${esc(D.season)}</b></span>
-      <span>Wind: <b>${esc(D.wind)}</b></span>
-      <span>Water: <b>${esc(D.water)}</b></span>
-      <span>Airport: <b>${esc(D.airport)}</b></span>
-      <span>Places: <b>${D.points.length}</b></span>`;
+      <span>${t('map.season')}: <b>${esc(T(d.season))}</b></span>
+      <span>${t('map.wind')}: <b>${esc(T(d.wind))}</b></span>
+      <span>${t('map.water')}: <b>${esc(T(d.water))}</b></span>
+      <span>${t('map.airport')}: <b>${esc(T(d.airport))}</b></span>
+      <span>${t('map.places')}: <b>${d.points.length}</b></span>`;
+    $('#mapKicker').textContent = t('map.kicker', { city: T(d.city) });
+    $('#tabTownSub').textContent = t('ai.tabTownSub', { city: T(d.city) });
+    $('#eyebrow').textContent = t('hero.eyebrow', {
+      city: T(d.city), n: REGATTAS.reduce((a, r) => a + spotsLeft(r), 0)
+    });
+    $('#statEvents').textContent = REGATTAS.length;
   }
 
   function renderFilters() {
     $('#filters').innerHTML = CATEGORIES.map(c => `
-      <button class="filter" data-cat="${c.id}" aria-pressed="${filter === c.id}">${c.icon} ${esc(c.label)}</button>`).join('');
+      <button class="filter" data-cat="${c.id}" aria-pressed="${filter === c.id}">${c.icon} ${esc(T(c.label))}</button>`).join('');
   }
 
   function renderList() {
     const list = visiblePoints();
     const box = $('#poiList');
-    if (!list.length) {
-      box.innerHTML = `<div class="poi-empty">Nothing found. Try “fish”, “sunset”, “SUP” or clear the filter.</div>`;
-      return;
-    }
+    if (!list.length) { box.innerHTML = `<div class="poi-empty">${esc(t('map.empty'))}</div>`; return; }
     box.innerHTML = list.map(p => `
       <button class="poi-item ${activePoi === p.id ? 'active' : ''} ${state.checkins.includes(p.id) ? 'done' : ''}"
               data-poi="${p.id}" style="${catStyle(p.cat)}">
         <span class="poi-ico">${catIcon(p.cat)}</span>
         <span>
-          <span class="poi-name">${esc(p.name)}</span><br>
-          <span class="poi-sub">${esc(CAT_META[p.cat].label)} · ${esc(p.price)}</span>
+          <span class="poi-name">${esc(T(p.name))}</span><br>
+          <span class="poi-sub">${esc(T(CAT_META[p.cat].label))} · ${esc(T(p.price))}</span>
         </span>
         <span class="poi-pts">+${p.pts}</span>
       </button>`).join('');
@@ -343,18 +382,18 @@
 
   function renderPins() {
     const vis = new Set(visiblePoints().map(p => p.id));
-    $('#pins').innerHTML = D.points.map(p => `
+    $('#pins').innerHTML = dest().points.map(p => `
       <button class="pin ${vis.has(p.id) ? '' : 'dim'} ${activePoi === p.id ? 'active' : ''} ${state.checkins.includes(p.id) ? 'done' : ''}"
-              data-poi="${p.id}" style="left:${p.x}%;top:${p.y}%;${catStyle(p.cat)}" title="${esc(p.name)}">
+              data-poi="${p.id}" style="left:${p.x}%;top:${p.y}%;${catStyle(p.cat)}" title="${esc(T(p.name))}">
         <span class="pin-body">
           <span class="pin-dot">${catIcon(p.cat)}</span>
-          <span class="pin-label">${esc(p.name)}</span>
+          <span class="pin-label">${esc(T(p.name))}</span>
         </span>
         <span class="pin-stem"></span>
       </button>`).join('');
 
     $('#mapLegend').innerHTML = Object.values(CAT_META)
-      .map(v => `<span class="lg"><i style="background:${v.color}"></i>${esc(v.label)}</span>`).join('');
+      .map(v => `<span class="lg"><i style="background:${v.color}"></i>${esc(T(v.label))}</span>`).join('');
   }
 
   function renderDetail() {
@@ -362,30 +401,31 @@
     const p = activePoi ? pointById(activePoi) : null;
     if (!p) { box.hidden = true; box.innerHTML = ''; return; }
     const done = state.checkins.includes(p.id);
+    const tags = (Lang.get() === 'ru' ? (p.tagsRu || p.tags) : p.tags).slice(0, 7);
     box.hidden = false;
     box.style.cssText = catStyle(p.cat);
     box.innerHTML = `
       <div class="pd-top">
         <div>
-          <span class="pd-cat">${catIcon(p.cat)} ${esc(CAT_META[p.cat].label)}</span>
-          <h3 class="pd-title">${esc(p.name)}</h3>
-          <p class="pd-desc">${esc(p.desc)}</p>
+          <span class="pd-cat">${catIcon(p.cat)} ${esc(T(CAT_META[p.cat].label))}</span>
+          <h3 class="pd-title">${esc(T(p.name))}</h3>
+          <p class="pd-desc">${esc(T(p.desc))}</p>
         </div>
-        <button class="btn btn-link btn-sm" data-close-detail type="button">Close ✕</button>
+        <button class="btn btn-link btn-sm" data-close-detail type="button">${esc(t('poi.close'))}</button>
       </div>
       <div class="pd-meta">
-        <div><span>Price</span><b>${esc(p.price)}</b></div>
-        <div><span>Hours</span><b>${esc(p.time)}</b></div>
-        <div><span>Check-in</span><b>+${p.pts} points</b></div>
+        <div><span>${t('poi.price')}</span><b>${esc(T(p.price))}</b></div>
+        <div><span>${t('poi.hours')}</span><b>${esc(T(p.time))}</b></div>
+        <div><span>${t('poi.checkin')}</span><b>${t('poi.pts', { n: p.pts })}</b></div>
       </div>
-      <div class="pd-tip"><b>Tip:</b> ${esc(p.tip)}</div>
+      <div class="pd-tip"><b>${t('poi.tip')}</b> ${esc(T(p.tip))}</div>
       <div class="pd-actions">
         <button class="btn ${done ? 'btn-ghost' : 'btn-primary'}" data-checkin="${p.id}" ${done ? 'disabled' : ''} type="button">
-          ${done ? '✓ Checked in' : `Check in · +${p.pts} points`}
+          ${done ? esc(t('poi.done')) : esc(t('poi.check', { n: p.pts }))}
         </button>
-        <button class="btn btn-ghost btn-sm" data-ask="${p.id}" type="button">Ask the guide about this place</button>
+        <button class="btn btn-ghost btn-sm" data-ask="${p.id}" type="button">${esc(t('poi.ask'))}</button>
       </div>
-      <div class="pd-tags">${p.tags.slice(0, 7).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</div>`;
+      <div class="pd-tags">${tags.map(x => `<span class="tag">${esc(x)}</span>`).join('')}</div>`;
   }
 
   function selectPoi(id, scroll) {
@@ -395,26 +435,27 @@
   }
 
   function checkin(id) {
-    if (!requireAuth('Check-ins are saved to an account')) return;
+    if (!requireAuth('gateCheckin')) return;
     if (state.checkins.includes(id)) return;
     const p = pointById(id);
     state.checkins.push(id);
-    addPoints(p.pts, `Check-in: ${p.name}`);
+    addPoints(p.pts, 'checkin', { name: T(p.name) });
     renderList(); renderPins(); renderDetail(); renderHero();
   }
 
   function renderCollections() {
+    const d = dest();
     $('#collGrid').innerHTML = COLLECTIONS.map(c => {
-      const items = D.points
+      const items = d.points
         .map(p => ({ p, s: p.tags.filter(x => c.match.includes(x)).length }))
         .filter(r => r.s > 0).sort((a, b) => b.s - a.s).slice(0, 3).map(r => r.p);
       if (!items.length) return '';
       return `
         <button class="coll" data-coll="${items[0].id}" type="button">
-          <h3>${esc(c.title)}</h3>
-          <span class="coll-sub">${esc(c.sub)}</span>
-          <ul class="coll-items">${items.map(p => `<li>${esc(p.name)}<span class="muted"> · ${esc(p.price)}</span></li>`).join('')}</ul>
-          <div class="coll-more">Show on the map →</div>
+          <h3>${esc(T(c.title))}</h3>
+          <span class="coll-sub">${esc(T(c.sub))}</span>
+          <ul class="coll-items">${items.map(p => `<li>${esc(T(p.name))}<span class="muted"> · ${esc(T(p.price))}</span></li>`).join('')}</ul>
+          <div class="coll-more">${esc(t('poi.show'))}</div>
         </button>`;
     }).join('');
   }
@@ -423,28 +464,28 @@
   function renderFaq() {
     $('#faqList').innerHTML = FAQ.map((f, i) => `
       <details class="faq-item" ${i === 0 ? 'open' : ''}>
-        <summary>${esc(f.q)}</summary>
-        <p>${esc(f.a)}</p>
+        <summary>${esc(T(f.q))}</summary>
+        <p>${esc(T(f.a))}</p>
       </details>`).join('');
   }
 
   /* ────────── hero ────────── */
   function renderHero() {
-    const r = REGATTAS.find(x => !state.events.includes(x.id)) || REGATTAS[0];
-    $('#hcName').textContent = r.name;
-    $('#hcBadge').textContent = r.date;
-    $('#hcLine').textContent = r.line;
-    $('#hcFleet').textContent = r.fleet;
-    $('#hcWind').textContent = D.wind;
-    $('#hcSpots').textContent = `${spotsLeft(r)} of ${r.spots}`;
+    const here = REGATTAS.filter(r => r.city === state.venue && !state.events.includes(r.id));
+    const r = here[0] || REGATTAS.find(x => !state.events.includes(x.id)) || REGATTAS[0];
+    const city = cityOf(r.city);
+    $('#hcName').textContent = T(r.name);
+    $('#hcBadge').textContent = T(r.date);
+    $('#hcLine').textContent = `${city.flag} ${T(city.city)} — ${T(r.line)}`;
+    $('#hcFleet').textContent = T(r.fleet);
+    $('#hcWind').textContent = T(city.wind);
+    $('#hcSpots').textContent = spotsLeft(r);
     const held = state.events.includes(r.id);
     const btn = $('#hcJoin');
-    btn.textContent = held ? '✓ Berth held' : `Hold a berth · +${r.pts} points`;
+    btn.textContent = held ? t('hc.held') : t('hc.join', { n: r.pts });
     btn.disabled = held;
     btn.dataset.event = r.id;
-    $('#statEvents').textContent = REGATTAS.length;
     $('#statCheckins').textContent = state.checkins.length;
-    $('#eyebrowSpots').textContent = REGATTAS.reduce((a, x) => a + spotsLeft(x), 0);
   }
 
   /* ────────── account ────────── */
@@ -454,38 +495,43 @@
     const next = nextLevel(state.points);
 
     $('#authGate').hidden = reg;
-    $('#authBtn').textContent = reg ? state.name.split(' ')[0] : 'Sign up';
-    $('#ptsChipValue').textContent = state.points.toLocaleString('en-US');
-    $('#pfPts').textContent = state.points.toLocaleString('en-US');
-    $('#pfRole').textContent = reg ? `${lvl.name} · ${state.email}` : 'Guest · no account';
+    $('#gateText').textContent = t('gate.text', { n: BONUS.signup });
+    $('#gateCta').textContent = t('gate.cta', { n: BONUS.signup });
+    $('#authBtn').textContent = reg ? state.name.split(' ')[0] : t('btn.signup');
+    $('#ptsChipValue').textContent = state.points.toLocaleString(Lang.get() === 'ru' ? 'ru-RU' : 'en-US');
+    $('#ptsChipUnit').textContent = t('btn.points');
+    $('#pfPts').textContent = state.points.toLocaleString(Lang.get() === 'ru' ? 'ru-RU' : 'en-US');
+    $('#pfPtsLabel').textContent = t('account.points');
+    $('#pfRole').textContent = reg ? `${T(lvl.name)} · ${state.email}` : t('account.guest');
     $('#pfName').value = displayName();
     $('#pfName').disabled = !reg;
     $('#avatar').textContent = reg
       ? (state.name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'CK')
       : '?';
 
-    $('#lvCur').textContent = lvl.name;
-    $('#lvNext').textContent = next ? `${next.from - state.points} points to ${next.name}` : 'top level reached';
+    $('#lvCur').textContent = T(lvl.name);
+    $('#lvNext').textContent = next
+      ? t('account.toLevel', { n: next.from - state.points, name: T(next.name) })
+      : t('account.maxLevel');
     const base = lvl.from, top = next ? next.from : lvl.from + 1;
     $('#lvFill').style.width = `${next ? Math.min(100, ((state.points - base) / (top - base)) * 100) : 100}%`;
-    $('#lvTicks').innerHTML = LEVELS.map(l => `<span class="${state.points >= l.from ? 'on' : ''}">${esc(l.name)}</span>`).join('');
+    $('#lvTicks').innerHTML = LEVELS.map(l => `<span class="${state.points >= l.from ? 'on' : ''}">${esc(T(l.name))}</span>`).join('');
 
     $('#pfCheckins').textContent = state.checkins.length;
     $('#pfEvents').textContent = state.events.length;
     $('#pfRefs').textContent = state.referrals;
     $('#pfRewards').textContent = state.claimed.length + state.courses.length;
 
-    $('#refLink').value = reg ? `charterkey.com/r/${state.refCode}` : 'Appears once you sign up';
+    $('#refText').textContent = t('ref.text', { a: BONUS.inviter, b: BONUS.invitee });
+    $('#refLink').value = reg ? `charterkey.com/r/${state.refCode}` : t('ref.placeholder');
     $('#refCopy').disabled = !reg;
     $('#refSim').disabled = !reg;
     $('#refDots').innerHTML = Array.from({ length: 5 }, (_, i) => `<i class="${i < state.referrals ? 'on' : ''}"></i>`).join('');
-    $('#refHint').textContent = state.referrals >= 5
-      ? 'All five aboard — your next race week is on us.'
-      : `${state.referrals} of 5 invited`;
+    $('#refHint').textContent = state.referrals >= 5 ? t('ref.hintFull') : t('ref.hint', { n: state.referrals });
     $('#refTiers').innerHTML = REF_TIERS.map(x => `
       <li class="${state.referrals >= x.n ? 'on' : ''}">
-        <b>${x.n} ${x.n === 1 ? 'friend' : 'friends'}</b>
-        <span>${esc(x.title)} — ${esc(x.sub)}</span>
+        <b>${x.n} ${esc(Lang.plural(x.n, t('ref.friend'), t('ref.friends'), t('ref.friends')))}</b>
+        <span>${esc(T(x.title))} — ${esc(T(x.sub))}</span>
       </li>`).join('');
 
     $('#rewards').innerHTML = REWARDS.map(r => {
@@ -494,73 +540,57 @@
       return `
         <div class="reward ${claimed ? 'claimed' : ''}">
           <div>
-            <div class="rw-title">${esc(r.title)}</div>
-            <div class="rw-sub">${esc(r.sub)}</div>
-            ${claimed ? `<div class="rw-code">Code: ${esc(r.code)}</div>` : ''}
+            <div class="rw-title">${esc(T(r.title))}</div>
+            <div class="rw-sub">${esc(T(r.sub))}</div>
+            ${claimed ? `<div class="rw-code">${t('rewards.code')} ${esc(r.code)}</div>` : ''}
           </div>
           ${claimed
-            ? '<span class="poi-pts">claimed</span>'
-            : `<button class="btn ${can ? 'btn-soft' : 'btn-ghost'} btn-sm" data-reward="${r.id}" type="button">${can ? 'Claim' : r.cost + ' pts'}</button>`}
+            ? `<span class="poi-pts">${esc(t('rewards.claimed'))}</span>`
+            : `<button class="btn ${can ? 'btn-soft' : 'btn-ghost'} btn-sm" data-reward="${r.id}" type="button">${can ? esc(t('rewards.claim')) : esc(t('rewards.cost', { n: r.cost }))}</button>`}
         </div>`;
     }).join('');
 
+    const locale = Lang.get() === 'ru' ? 'ru-RU' : 'en-GB';
     $('#activityLog').innerHTML = state.log.length
-      ? state.log.map(l => `<li>${esc(l.label)} <span>${l.n > 0 ? '+' : ''}${l.n} · ${new Date(l.t).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></li>`).join('')
-      : '<li class="log-empty">Empty so far. Create an account and hold your first berth.</li>';
+      ? state.log.map(l => `<li>${esc(t('logLabel.' + l.key, l.vars))} <span>${l.n > 0 ? '+' : ''}${l.n} · ${new Date(l.t).toLocaleString(locale, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></li>`).join('')
+      : `<li class="log-empty">${esc(t('log.empty'))}</li>`;
   }
 
   function claimReward(id) {
-    if (!requireAuth('Rewards are tied to an account')) return;
+    if (!requireAuth('gateReward')) return;
     const r = REWARDS.find(x => x.id === id);
     if (!r || state.claimed.includes(id)) return;
     if (state.points < r.cost) {
-      toast(`<b>${r.cost - state.points}</b> points short of “${esc(r.title)}”`);
+      toast(t('toast.short', { n: r.cost - state.points, title: esc(T(r.title)) }));
       return;
     }
     state.points -= r.cost;
     state.claimed.push(id);
-    state.log.unshift({ t: Date.now(), label: `Reward: ${r.title}`, n: -r.cost });
+    state.log.unshift({ t: Date.now(), key: 'reward', vars: { title: T(r.title) }, n: -r.cost });
     save(); renderProfile();
-    toast(`Reward claimed · code <b>${esc(r.code)}</b>`);
+    toast(t('toast.reward', { code: esc(r.code) }));
   }
 
   /* ────────── two assistants ────────── */
   let mode = 'assistant';
   const engine = () => (mode === 'guide' ? Guide : Assistant);
-  const ctx = () => ({ state: { ...state, name: displayName() }, level: levelOf(state.points), nextLevel: nextLevel(state.points) });
-
-  const SIDEBAR = {
-    assistant: {
-      title: 'What the crew assistant knows',
-      items: [
-        'The three tiers and what each one actually includes',
-        'Experience needed, and when we will say no',
-        'Category 3 safety inventory aboard',
-        'Flights into Dalaman, transfers, money and packing',
-        'Cancellations, the Academy, the Club, your points'
-      ]
-    },
-    guide: {
-      title: 'What the town guide knows',
-      items: [
-        '12 places in Göcek — with prices and hours',
-        'Which place suits which time of day',
-        'Lay days, evenings after racing, days with the shore crew',
-        'Your level, points and check-ins so far'
-      ]
-    }
-  };
+  const ctx = () => ({ dest: dest(), state: { ...state, name: displayName() }, level: levelOf(state.points), nextLevel: nextLevel(state.points) });
 
   function renderSidebar() {
-    const s = SIDEBAR[mode];
-    $('#gaTitle').textContent = s.title;
-    $('#gaList').innerHTML = s.items.map(i => `<li>${esc(i)}</li>`).join('');
+    if (mode === 'guide') {
+      $('#gaTitle').textContent = t('ai.sideTown');
+      $('#gaList').innerHTML = t('ai.sideTownItems')
+        .map(i => `<li>${esc(i.replace('{n}', dest().points.length).replace('{city}', T(dest().city)))}</li>`).join('');
+    } else {
+      $('#gaTitle').textContent = t('ai.sideCrew');
+      $('#gaList').innerHTML = t('ai.sideCrewItems').map(i => `<li>${esc(i)}</li>`).join('');
+    }
   }
 
   function renderBoat() {
-    $('#boatType').textContent = BOAT.type;
+    $('#boatType').textContent = T(BOAT.type);
     $('#boatSpecs').innerHTML = BOAT.specs
-      .map(s => `<div class="ga-row"><span>${esc(s.label)}</span><b>${esc(s.value)}</b></div>`).join('');
+      .map(s => `<div class="ga-row"><span>${esc(T(s.label))}</span><b>${esc(T(s.value))}</b></div>`).join('');
   }
 
   function bubble(kind, html, cards) {
@@ -574,8 +604,8 @@
       wrap.innerHTML = cards.map(p => `
         <button class="msg-card" data-poi="${p.id}" style="${catStyle(p.cat)}" type="button">
           <span class="poi-ico">${catIcon(p.cat)}</span>
-          <span><span class="mc-name">${esc(p.name)}</span><br><span class="mc-sub">${esc(p.price)} · ${esc(p.time)}</span></span>
-          <span class="mc-go">on the map →</span>
+          <span><span class="mc-name">${esc(T(p.name))}</span><br><span class="mc-sub">${esc(T(p.price))} · ${esc(T(p.time))}</span></span>
+          <span class="mc-go">${esc(t('ai.cardGo'))}</span>
         </button>`).join('');
       b.append(wrap);
     }
@@ -608,7 +638,7 @@
 
   function resetChat() {
     $('#chatLog').innerHTML = '';
-    const w = mode === 'guide' ? Guide.WELCOME() : Assistant.WELCOME(ctx().state);
+    const w = mode === 'guide' ? Guide.WELCOME(dest()) : Assistant.WELCOME(ctx().state);
     bubble('bot', w.text);
     chips(w.chips);
     renderSidebar();
@@ -621,9 +651,45 @@
     resetChat();
   }
 
+  /* ────────── language ────────── */
+  function applyI18n() {
+    document.documentElement.lang = Lang.get();
+    $$('[data-i18n]').forEach(el => {
+      const v = t(el.dataset.i18n);
+      if (typeof v === 'string') el.textContent = v;
+    });
+    $$('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+    $$('[data-lang]').forEach(b => b.classList.toggle('on', b.dataset.lang === Lang.get()));
+    $('#authTitle').textContent = t('modal.title');
+    $('#authSubmit').textContent = t('modal.submit', { n: BONUS.signup });
+    $('#perk1').innerHTML = t('modal.perk1', { title: esc(T(LEAD_MAGNET.title)) });
+    $('#perk2').innerHTML = t('modal.perk2', { n: BONUS.signup });
+    $('#perk3').innerHTML = t('modal.perk3', { a: BONUS.inviter, b: BONUS.invitee });
+  }
+
+  function setLang(v) {
+    if (v === Lang.get()) return;
+    Lang.set(v);
+    applyI18n();
+    MapView.render(dest());
+    renderAll();
+    renderQuiz();
+    resetChat();
+  }
+
   /* ────────── events ────────── */
   document.addEventListener('click', e => {
     const el = e.target;
+
+    const lang = el.closest('[data-lang]');
+    if (lang) { setLang(lang.dataset.lang); return; }
+
+    const venue = el.closest('[data-venue]');
+    if (venue) {
+      switchVenue(venue.dataset.venue);
+      if (venue.classList.contains('reg-venue')) $('#venues').scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
 
     if (el.closest('[data-auth]')) { openAuth(); return; }
     if (el.closest('[data-auth-close]')) { closeAuth(); return; }
@@ -631,8 +697,8 @@
     const m = el.closest('[data-mode]');
     if (m) { setMode(m.dataset.mode); return; }
 
-    const tier = el.closest('[data-tier]');
-    if (tier) { chooseTier(tier.dataset.tier); return; }
+    const tierEl = el.closest('[data-tier]');
+    if (tierEl) { chooseTier(tierEl.dataset.tier); return; }
 
     const ans = el.closest('[data-answer]');
     if (ans) { answerQuiz(ans.dataset.answer); return; }
@@ -640,10 +706,10 @@
 
     const askTier = el.closest('[data-ask-tier]');
     if (askTier) {
-      const t = TIERS.find(x => x.id === askTier.dataset.askTier);
+      const x = TIERS.find(y => y.id === askTier.dataset.askTier);
       setMode('assistant');
       $('#ai').scrollIntoView({ behavior: 'smooth' });
-      setTimeout(() => ask(`Tell me about the ${t.name} tier`), 350);
+      setTimeout(() => ask(Lang.get() === 'ru' ? `Расскажи про тариф ${T(x.name)}` : `Tell me about the ${T(x.name)} tier`), 350);
       return;
     }
 
@@ -657,6 +723,8 @@
     if (cp) { buyCourse(cp.dataset.coursePoints, true); return; }
 
     if (el.closest('#clubBtn')) { joinClub(); return; }
+
+    if (el.closest('#platformCta')) { toast(t('platform.toast')); return; }
 
     const f = el.closest('[data-cat]');
     if (f) { filter = f.dataset.cat; renderFilters(); renderList(); renderPins(); return; }
@@ -675,7 +743,7 @@
       const p = pointById(ak.dataset.ask);
       setMode('guide');
       $('#ai').scrollIntoView({ behavior: 'smooth' });
-      setTimeout(() => ask(p.name), 350);
+      setTimeout(() => ask(T(p.name)), 350);
       return;
     }
 
@@ -689,7 +757,7 @@
 
     if (el.classList.contains('chip')) {
       const q = el.textContent;
-      if (/^sign up$/i.test(q.trim())) { openAuth(); return; }
+      if (/^(sign up|зарегистрироваться)$/i.test(q.trim())) { openAuth(); return; }
       ask(q);
       return;
     }
@@ -719,26 +787,26 @@
   });
 
   $('#refCopy').addEventListener('click', async () => {
-    if (!requireAuth('Your link appears as soon as you sign up')) return;
+    if (!requireAuth('gateRef')) return;
     try { await navigator.clipboard.writeText($('#refLink').value); } catch { $('#refLink').select(); }
-    toast('Link copied — send it to your crew');
+    toast(t('toast.copied'));
   });
 
   $('#refSim').addEventListener('click', () => {
-    if (!requireAuth('Invitations are sent from your account')) return;
-    if (state.referrals >= 5) { toast('All five invitations are already used'); return; }
+    if (!requireAuth('gateInvite')) return;
+    if (state.referrals >= 5) { toast(t('toast.invitesDone')); return; }
     state.referrals++;
     const tier = REF_TIERS.find(x => x.n === state.referrals);
-    addPoints(BONUS.inviter, `Friend joined (${state.referrals}/5)`);
-    if (tier) toast(`Tier ${tier.n}: <b>${esc(tier.title)}</b> unlocked`);
+    addPoints(BONUS.inviter, 'referral', { n: state.referrals });
+    if (tier) toast(t('toast.tier', { n: tier.n, title: esc(T(tier.title)) }));
     renderProfile();
   });
 
   $('#resetAll').addEventListener('click', () => {
-    if (!confirm('Sign out and erase points, check-ins, berths and rewards?')) return;
+    if (!confirm(t('confirmReset'))) return;
     state = { ...DEFAULT }; save();
-    restartQuiz(); renderAll(); resetChat();
-    toast('Account cleared');
+    restartQuiz(); MapView.render(dest()); renderAll(); resetChat();
+    toast(t('toast.cleared'));
   });
 
   const spy = new IntersectionObserver(entries => {
@@ -751,6 +819,7 @@
 
   /* ────────── start ────────── */
   function renderAll() {
+    renderVenues();
     renderTiers();
     renderMagnet();
     renderEvents();
@@ -767,7 +836,8 @@
     renderBoat();
   }
 
-  MapView.render(D);
+  applyI18n();
+  MapView.render(dest());
   renderQuiz();
   renderAll();
   resetChat();

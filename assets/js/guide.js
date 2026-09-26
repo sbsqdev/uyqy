@@ -1,19 +1,20 @@
-/* Charter Key — town guide. Offline engine: intent matching + tag ranking over the places. */
+/* Charter Key — town guide (en/ru), venue-aware. Offline engine: intent + tag ranking. */
 
 const Guide = (() => {
-  const norm = s => s.toLowerCase().replace(/[^a-z0-9\s-]/gi, ' ');
-  const stem = w => w.replace(/(ing|ed|s)$/u, '');
+  const L = (en, ru) => (Lang.get() === 'ru' ? ru : en);
+  const norm = s => s.toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9\s-]/gi, ' ');
+  const stem = w => w.replace(/(ing|ed|ами|ями|ого|ому|ой|ей|ая|ые|ий|ых|ам|ом|ах|s)$/u, '');
   const words = q => norm(q).split(/\s+/).filter(w => w.length > 2).map(stem);
   const has = (q, list) => list.some(k => norm(q).includes(k));
 
-  const D = () => DESTINATION;
+  const tagsOf = p => [...p.tags, ...(p.tagsRu || [])];
 
-  function rank(terms) {
-    return D().points
+  function rank(d, terms) {
+    return d.points
       .map(p => {
         let s = 0;
-        const hay = norm(p.name + ' ' + p.desc + ' ' + p.tip);
-        p.tags.forEach(tag => {
+        const hay = norm(T(p.name) + ' ' + T(p.desc) + ' ' + T(p.tip));
+        tagsOf(p).forEach(tag => {
           const tn = stem(norm(tag));
           terms.forEach(w => {
             if (tn === w) s += 6;
@@ -26,7 +27,8 @@ const Guide = (() => {
       .filter(r => r.s > 0).sort((a, b) => b.s - a.s).map(r => r.p);
   }
 
-  const byTags = (tags, cat, n = 3) => D().points
+  /* выборки идут по английским тегам — они внутренние ключи */
+  const byTags = (d, tags, cat, n = 3) => d.points
     .map(p => {
       let s = p.tags.filter(x => tags.includes(x)).length * 5;
       if (cat && p.cat === cat) s += 4;
@@ -34,193 +36,220 @@ const Guide = (() => {
     })
     .filter(r => r.s > 0).sort((a, b) => b.s - a.s).slice(0, n).map(r => r.p);
 
-  const pick = (cat, tags = [], n = 3) => D().points
+  const pick = (d, cat, tags = [], n = 3) => d.points
     .filter(p => p.cat === cat)
     .map(p => ({ p, s: p.tags.filter(x => tags.includes(x)).length }))
     .sort((a, b) => b.s - a.s).slice(0, n).map(r => r.p);
 
-  const line = p => `${p.name} — ${p.price}, ${p.time}`;
-  const first = p => p.desc.split('.')[0];
-  const bullet = list => list.map(p => `• <b>${p.name}</b> — ${first(p)}. ${p.price}, ${p.time}.`).join('\n');
+  const line = p => `${T(p.name)} — ${T(p.price)}, ${T(p.time)}`;
+  const first = p => T(p.desc).split('.')[0];
+  const bullet = list => list.map(p => `• <b>${T(p.name)}</b> — ${first(p)}. ${T(p.price)}, ${T(p.time)}.`).join('\n');
 
   const INTENTS = [
     {
       id: 'greet',
-      test: q => has(q, ['hello', 'hi ', 'hey', 'good morning']),
-      run: () => ({
-        text: `Hello. I am the town guide for <b>Göcek</b> — ${D().points.length} places, with prices, hours and the right time of day for each.\n\nAsk me the way you would ask a local: “where to eat fish after racing”, “what to do on a lay day”, “where to watch the sunset”.`,
-        chips: ['Plan my lay day', 'Where to eat fish?', 'Sunset spot?']
+      test: q => has(q, ['hello', 'hi ', 'hey', 'привет', 'здравствуй', 'добрый']),
+      run: (q, c) => ({
+        text: L(`Hello. I am the town guide for <b>${T(c.dest.city)}</b> — ${c.dest.points.length} places, with prices, hours and the right time of day for each.\n\nAsk the way you would ask a local: “where to eat after racing”, “what to do on a lay day”, “sunset spot”.`,
+                `Привет. Я гид по городу <b>${T(c.dest.city)}</b> — ${c.dest.points.length} мест с ценами, часами и временем суток, когда туда идти.\n\nСпрашивайте как местного: «где поесть после гонки», «что делать в день без гонок», «куда на закат».`),
+        chips: L(['Plan my lay day', 'Where to eat?', 'Sunset spot?'],
+                 ['Собери план на день', 'Где поесть?', 'Куда на закат?'])
       })
     },
     {
       id: 'plan',
-      test: q => has(q, ['plan', 'itinerary', 'schedule', 'lay day', 'day off', 'free day', 'what to do today'])
-        && !has(q, ['evening', 'night']),
-      run: () => {
-        const bf = pick('eat', ['breakfast', 'coffee'], 1)[0];
-        const morning = byTags(['morning', 'calm', 'sup'], 'do', 1)[0];
-        const day = pick('see', ['view', 'nature', 'history'], 1)[0];
-        const dinner = pick('eat', ['dinner', 'fish'], 1)[0];
-        const night = pick('night', [], 1)[0];
+      test: q => has(q, ['plan', 'itinerary', 'schedule', 'lay day', 'day off', 'free day',
+                         'план', 'маршрут', 'на день', 'расписани', 'спланируй'])
+        && !has(q, ['evening', 'night', 'вечер', 'ночь']),
+      run: (q, c) => {
+        const d = c.dest;
+        const bf = pick(d, 'eat', ['breakfast', 'coffee'], 1)[0];
+        const morning = byTags(d, ['morning', 'calm', 'activity'], 'do', 1)[0];
+        const day = pick(d, 'see', ['view', 'nature', 'history'], 1)[0];
+        const dinner = pick(d, 'eat', ['dinner', 'fish'], 1)[0];
+        const night = pick(d, 'night', [], 1)[0];
         const list = [bf, morning, day, dinner, night].filter(Boolean);
         const pts = list.reduce((a, p) => a + p.pts, 0);
+        const rows = `<b>07:30</b> · ${bf ? line(bf) : '—'}\n<b>09:00</b> · ${morning ? T(morning.name) : '—'}\n<b>13:00</b> · ${day ? T(day.name) : '—'}\n<b>19:30</b> · ${dinner ? line(dinner) : '—'}\n<b>22:00</b> · ${night ? T(night.name) : '—'}`;
         return {
-          text: `A lay day in <b>Göcek</b>, arranged so you do not waste it:\n\n`
-            + `<b>07:30</b> · ${bf ? line(bf) : '—'}\n<b>09:00</b> · ${morning ? morning.name : '—'} — while the bay is still glass\n<b>13:00</b> · ${day ? day.name : '—'}\n<b>19:30</b> · ${dinner ? line(dinner) : '—'}\n<b>22:00</b> · ${night ? night.name : '—'}\n\n`
-            + `Do the whole route and that is <b>+${pts} points</b> on your account.`,
+          text: L(`A lay day in <b>${T(d.city)}</b>, arranged so you do not waste it:\n\n${rows}\n\nDo the whole route and that is <b>+${pts} points</b> on your account.`,
+                  `День без гонок в городе <b>${T(d.city)}</b> — так, чтобы не жалеть:\n\n${rows}\n\nПройдёте маршрут целиком — <b>+${pts} очков</b> в аккаунт.`),
           cards: list,
-          chips: ['What if it rains?', 'Where to rent a SUP?', 'Somewhere quieter']
+          chips: L(['What if it rains?', 'Somewhere quieter', 'Where to eat?'],
+                   ['А если дождь?', 'Где потише?', 'Где поесть?'])
         };
       }
     },
     {
       id: 'calm',
-      test: q => has(q, ['no wind', 'calm', 'abandoned', 'cancelled', 'bored', 'nothing to do']),
-      run: () => {
-        const list = byTags(['lay day', 'calm', 'nature', 'activity', 'sup'], null, 3);
+      test: q => has(q, ['no wind', 'calm', 'abandoned', 'cancelled', 'bored', 'nothing to do',
+                         'штил', 'без ветра', 'нет ветра', 'отменили', 'скучно', 'занят']),
+      run: (q, c) => {
+        const list = byTags(c.dest, ['lay day', 'calm', 'nature', 'activity', 'view'], null, 3);
         return {
-          text: `No wind is the best excuse to see the place instead of the water. Three options, different energy levels:\n\n`
-            + list.map((p, i) => `<b>${i + 1}.</b> ${p.name} — ${first(p)}. ${p.price}, ${p.time}.`).join('\n'),
+          text: L(`No racing is the best excuse to see the place instead of the water. Three options, different energy levels:\n\n`,
+                  `День без гонок — лучший повод увидеть город, а не только воду. Три варианта на разную энергию:\n\n`)
+            + list.map((p, i) => `<b>${i + 1}.</b> ${T(p.name)} — ${first(p)}. ${T(p.price)}, ${T(p.time)}.`).join('\n'),
           cards: list,
-          chips: ['One strong thing only', 'With kids?', 'Somewhere to eat nearby']
+          chips: L(['One strong thing only', 'With kids?', 'Somewhere to eat nearby'],
+                   ['Что-то одно, но сильное', 'Куда с детьми?', 'Где поесть рядом?'])
         };
       }
     },
     {
       id: 'eat',
-      test: q => has(q, ['eat', 'food', 'restaurant', 'dinner', 'lunch', 'breakfast', 'fish', 'hungry', 'cafe', 'coffee']),
-      run: q => {
-        const morning = has(q, ['breakfast', 'morning', 'coffee']);
-        const cheap = has(q, ['cheap', 'budget', 'affordable']);
+      test: q => has(q, ['eat', 'food', 'restaurant', 'dinner', 'lunch', 'breakfast', 'fish', 'hungry', 'cafe', 'coffee',
+                         'поесть', 'еда', 'ресторан', 'кафе', 'ужин', 'обед', 'завтрак', 'рыб', 'кофе', 'голод']),
+      run: (q, c) => {
+        const morning = has(q, ['breakfast', 'morning', 'coffee', 'завтрак', 'утр', 'кофе']);
+        const cheap = has(q, ['cheap', 'budget', 'дешев', 'недорог', 'бюджет']);
         const tags = morning ? ['breakfast', 'coffee', 'morning'] : ['dinner', 'fish', 'evening', 'after racing'];
         if (cheap) tags.push('cheap');
-        const list = pick('eat', tags, 3);
+        const list = pick(c.dest, 'eat', tags, 3);
+        const body = list.map(p => `• <b>${T(p.name)}</b> — ${first(p)}. ${T(p.price)}, ${T(p.time)}.\n  <i>${T(p.tip)}</i>`).join('\n');
         return {
-          text: (morning ? `Breakfast in <b>Göcek</b>, timed for the skippers briefing:\n\n`
-                         : `Where to eat in <b>Göcek</b>${cheap ? ', without overspending' : ''}:\n\n`)
-            + list.map(p => `• <b>${p.name}</b> — ${first(p)}. ${p.price}, ${p.time}.\n  <i>${p.tip}</i>`).join('\n'),
+          text: L((morning ? `Breakfast in <b>${T(c.dest.city)}</b>, timed for the briefing:\n\n` : `Where to eat in <b>${T(c.dest.city)}</b>${cheap ? ', without overspending' : ''}:\n\n`) + body,
+                  (morning ? `Завтрак в городе <b>${T(c.dest.city)}</b>, с расчётом на брифинг:\n\n` : `Где есть в городе <b>${T(c.dest.city)}</b>${cheap ? ', без перерасхода' : ''}:\n\n`) + body),
           cards: list,
-          chips: ['Where does the fleet eat?', 'Breakfast before racing', 'Something local']
+          chips: L(['Where does the fleet eat?', 'Breakfast before racing', 'Something local'],
+                   ['Где ужинают экипажи?', 'Завтрак перед гонкой', 'Что-то местное'])
         };
       }
     },
     {
       id: 'see',
-      test: q => has(q, ['see', 'sunset', 'view', 'photo', 'sights', 'scenery', 'beautiful', 'walk']),
-      run: () => {
-        const list = byTags(['sunset', 'view', 'photo', 'history', 'nature'], 'see', 3);
+      test: q => has(q, ['see', 'sunset', 'view', 'photo', 'sights', 'walk',
+                         'увидет', 'посмотрет', 'закат', 'вид', 'фото', 'достопримечат', 'прогул']),
+      run: (q, c) => {
+        const list = byTags(c.dest, ['sunset', 'view', 'photo', 'history', 'nature'], 'see', 3);
         return {
-          text: `Worth seeing here:\n\n${bullet(list)}\n\nTip for the first one: <i>${list[0] ? list[0].tip : ''}</i>`,
+          text: L(`Worth seeing here:\n\n${bullet(list)}\n\nTip for the first one: <i>${list[0] ? T(list[0].tip) : ''}</i>`,
+                  `Что здесь стоит увидеть:\n\n${bullet(list)}\n\nСовет по первой точке: <i>${list[0] ? T(list[0].tip) : ''}</i>`),
           cards: list,
-          chips: ['Where for the sunset?', 'Something for a whole day', 'Anywhere to eat nearby']
+          chips: L(['Where for the sunset?', 'Something for a whole day', 'Anywhere to eat nearby'],
+                   ['Куда на закат?', 'Что-то на весь день', 'Где поесть рядом?'])
         };
       }
     },
     {
       id: 'night',
-      test: q => has(q, ['night', 'evening', 'bar', 'party', 'drink', 'music', 'after racing']),
-      run: () => {
-        const list = [...pick('night', [], 2), ...pick('eat', ['dinner', 'after racing'], 1)];
+      test: q => has(q, ['night', 'evening', 'bar', 'party', 'drink', 'music', 'after racing',
+                         'ночь', 'вечер', 'бар', 'вечеринк', 'выпит', 'музык', 'после гонк']),
+      run: (q, c) => {
+        const list = [...pick(c.dest, 'night', [], 2), ...pick(c.dest, 'eat', ['dinner', 'after racing'], 1)];
         return {
-          text: `The evening after racing in <b>Göcek</b>:\n\n${bullet(list)}\n\nHouse rule: ${list[0] ? list[0].tip : ''}`,
+          text: L(`The evening after racing in <b>${T(c.dest.city)}</b>:\n\n${bullet(list)}\n\nHouse rule: ${list[0] ? T(list[0].tip) : ''}`,
+                  `Вечер после гонки в городе <b>${T(c.dest.city)}</b>:\n\n${bullet(list)}\n\nПравило места: ${list[0] ? T(list[0].tip) : ''}`),
           cards: list,
-          chips: ['Somewhere quieter', 'Recover after racing', 'Breakfast for tomorrow']
+          chips: L(['Somewhere quieter', 'Breakfast for tomorrow', 'Plan my lay day'],
+                   ['Где потише?', 'Завтрак на утро', 'Собери план на день'])
         };
       }
     },
     {
       id: 'active',
-      test: q => has(q, ['do ', 'activity', 'sport', 'snorkel', 'swim', 'paddle', 'dive', 'sup', 'training']),
-      run: () => {
-        const list = pick('do', ['activity', 'water', 'sup', 'training'], 3);
+      test: q => has(q, ['do ', 'activity', 'sport', 'snorkel', 'swim', 'paddle', 'kayak', 'run',
+                         'поделат', 'занят', 'актив', 'спорт', 'снорклинг', 'купат', 'плыт']),
+      run: (q, c) => {
+        const list = pick(c.dest, 'do', ['activity', 'water', 'crew', 'morning'], 3);
+        const body = list.map(p => L(
+          `• <b>${T(p.name)}</b> — ${first(p)}. ${T(p.price)}, ${T(p.time)}. <b>+${p.pts}</b> points for a check-in.`,
+          `• <b>${T(p.name)}</b> — ${first(p)}. ${T(p.price)}, ${T(p.time)}. <b>+${p.pts}</b> очков за чек-ин.`)).join('\n');
         return {
-          text: `Things to do with the crew:\n\n`
-            + list.map(p => `• <b>${p.name}</b> — ${first(p)}. ${p.price}, ${p.time}. <b>+${p.pts}</b> points for a check-in.`).join('\n'),
+          text: L(`Things to do with the crew:\n\n${body}`, `Чем занять себя и экипаж:\n\n${body}`),
           cards: list,
-          chips: ['Something calmer', 'With kids?', 'Plan my lay day']
+          chips: L(['Something calmer', 'With kids?', 'Plan my lay day'],
+                   ['Что-то поспокойнее', 'Куда с детьми?', 'Собери план на день'])
         };
       }
     },
     {
       id: 'family',
-      test: q => has(q, ['kids', 'children', 'family', 'wife', 'husband', 'partner', 'parents', 'non-sailor', 'shore crew']),
-      run: () => {
-        const list = byTags(['kids', 'crew', 'water', 'snorkelling'], null, 3);
+      test: q => has(q, ['kids', 'children', 'family', 'partner', 'parents', 'non-sailor', 'shore crew',
+                         'дет', 'семь', 'родител', 'команда поддержк']),
+      run: (q, c) => {
+        const list = byTags(c.dest, ['kids', 'crew', 'water', 'snorkelling', 'walk'], null, 3);
         return {
-          text: `For the people who came with you but are not racing:\n\n${bullet(list)}\n\nThe logic is simple: mornings for water and snorkelling, and once the meltemi fills in after midday the shore is the nicer place to be.`,
+          text: L(`For the people who came with you but are not racing:\n\n${bullet(list)}\n\nThe logic is simple: mornings on the water, afternoons ashore once the breeze fills in.`,
+                  `Для тех, кто приехал с вами, но не гоняется:\n\n${bullet(list)}\n\nЛогика простая: утро на воде, после полудня — берег, когда наполняет ветер.`),
           cards: list,
-          chips: ['Where to eat with kids?', 'Something for half a day', 'Where for the sunset?']
-        };
-      }
-    },
-    {
-      id: 'recover',
-      test: q => has(q, ['back', 'recover', 'tired', 'massage', 'spa', 'hammam', 'relax', 'sore', 'ache']),
-      run: () => {
-        const list = byTags(['recovery', 'spa', 'relax'], null, 2);
-        return {
-          text: `After three days of hiking the rail your body needs this more than another dinner:\n\n`
-            + list.map(p => `• <b>${p.name}</b> — ${first(p)}. ${p.price}, ${p.time}.\n  <i>${p.tip}</i>`).join('\n'),
-          cards: list,
-          chips: ['A quiet dinner after', 'What about the morning?', 'Plan tomorrow']
+          chips: L(['Where to eat with kids?', 'Something for half a day', 'Where for the sunset?'],
+                   ['Где поесть с детьми?', 'Что-то на полдня', 'Куда на закат?'])
         };
       }
     },
     {
       id: 'repair',
-      test: q => has(q, ['repair', 'sail', 'rigging', 'broken', 'torn', 'berth', 'marina', 'service', 'laundry', 'shower']),
-      run: () => {
-        const list = pick('yacht', [], 3);
+      test: q => has(q, ['repair', 'sail', 'rigging', 'broken', 'torn', 'berth', 'marina', 'service', 'laundry', 'shower',
+                         'ремонт', 'парус', 'такелаж', 'сломал', 'порвал', 'швартов', 'марин', 'прачечн', 'душ']),
+      run: (q, c) => {
+        const list = pick(c.dest, 'yacht', [], 3);
+        const body = list.map(p => `• <b>${T(p.name)}</b> — ${first(p)}. ${T(p.price)}, ${T(p.time)}.\n  <i>${T(p.tip)}</i>`).join('\n');
         return {
-          text: `Yacht services in <b>Göcek</b>:\n\n`
-            + list.map(p => `• <b>${p.name}</b> — ${first(p)}. ${p.price}, ${p.time}.\n  <i>${p.tip}</i>`).join('\n'),
+          text: L(`Yacht services in <b>${T(c.dest.city)}</b>:\n\n${body}`,
+                  `Яхтенная инфраструктура города <b>${T(c.dest.city)}</b>:\n\n${body}`),
           cards: list,
-          chips: ['Where is the marina?', 'How much is a berth?', 'Plan my lay day']
+          chips: L(['Where is the marina?', 'How much is a berth?', 'Plan my lay day'],
+                   ['Где марина?', 'Сколько стоит стоянка?', 'Собери план на день'])
         };
       }
     },
     {
       id: 'weather',
-      test: q => has(q, ['wind', 'weather', 'temperature', 'season', 'forecast', 'when to come', 'hot', 'cold']),
-      run: () => ({
-        text: `<b>Göcek</b>, ${D().region}\n\n• Season: ${D().season}\n• Wind: ${D().wind}\n• Water: ${D().water}\n• Airport: ${D().airport}\n\n${D().blurb}\n\nIf racing is abandoned for lack of wind, ask me for a lay day plan.`,
-        chips: ['Plan my lay day', 'Where to eat fish?', 'Sunset spot?']
-      })
+      test: q => has(q, ['wind', 'weather', 'temperature', 'season', 'forecast', 'when to come', 'cold', 'hot',
+                         'ветр', 'ветер', 'погод', 'температур', 'сезон', 'холодн', 'жарк']),
+      run: (q, c) => {
+        const d = c.dest;
+        return {
+          text: L(`<b>${T(d.city)}</b>, ${T(d.region)}\n\n• Season: ${T(d.season)}\n• Wind: ${T(d.wind)}\n• Water: ${T(d.water)}\n• Airport: ${T(d.airport)}\n\n${T(d.blurb)}`,
+                  `<b>${T(d.city)}</b>, ${T(d.region)}\n\n• Сезон: ${T(d.season)}\n• Ветер: ${T(d.wind)}\n• Вода: ${T(d.water)}\n• Аэропорт: ${T(d.airport)}\n\n${T(d.blurb)}`),
+          chips: L(['Plan my lay day', 'Where to eat?', 'Sunset spot?'],
+                   ['Собери план на день', 'Где поесть?', 'Куда на закат?'])
+        };
+      }
     },
     {
       id: 'price',
-      test: q => has(q, ['how much', 'price', 'cost', 'budget', 'expensive', 'cheap']),
-      run: () => {
-        const free = D().points.filter(p => /free/i.test(p.price)).slice(0, 3);
-        const eat = pick('eat', ['dinner'], 1)[0];
-        const yacht = pick('yacht', [], 1)[0];
+      test: q => has(q, ['how much', 'price', 'cost', 'budget', 'expensive', 'cheap',
+                         'сколько стоит', 'цен', 'бюджет', 'дорого', 'дешев']),
+      run: (q, c) => {
+        const d = c.dest;
+        const free = d.points.filter(p => /free|бесплатно/i.test(T(p.price))).slice(0, 3);
+        const eat = pick(d, 'eat', ['dinner'], 1)[0];
+        const yacht = pick(d, 'yacht', [], 1)[0];
+        const rows = (yacht ? `• ${L('Berth / service', 'Стоянка / сервис')}: ${T(yacht.price)}\n` : '')
+          + (eat ? `• ${L('Dinner per person', 'Ужин на человека')}: ${T(eat.price)}\n` : '')
+          + `• ${L('Free', 'Бесплатно')}: ${free.length ? free.map(p => T(p.name)).join(', ') : L('viewpoints and shoreline walks', 'смотровые точки и прогулки по берегу')}`;
         return {
-          text: `Money ashore in <b>Göcek</b>:\n\n`
-            + (yacht ? `• Berth / service: ${yacht.price}\n` : '')
-            + (eat ? `• Dinner per person: ${eat.price}\n` : '')
-            + `• Free: ${free.length ? free.map(p => p.name).join(', ') : 'viewpoints and shoreline walks'}\n\n`
-            + `Budget $250–400 for a week ashore including food and the transfer. For what the berth itself covers, ask the crew assistant on the other tab.`,
+          text: L(`Money ashore in <b>${T(d.city)}</b>:\n\n${rows}\n\nBudget $250–400 for a week ashore. For what the berth itself covers, ask the crew assistant.`,
+                  `Деньги на берегу в городе <b>${T(d.city)}</b>:\n\n${rows}\n\nНа неделю на берегу закладывайте $250–400. Что входит в само место — спросите ассистента экипажа.`),
           cards: free,
-          chips: ['What is free?', 'Cheap eats', 'One big moment']
+          chips: L(['What is free?', 'Cheap eats', 'One big moment'],
+                   ['Что бесплатно?', 'Недорогая еда', 'Одно большое впечатление'])
         };
       }
     },
     {
       id: 'account',
-      test: q => has(q, ['point', 'reward', 'level', 'account', 'referral', 'invite', 'friend', 'check-in', 'checkin']),
+      test: q => has(q, ['point', 'reward', 'level', 'account', 'referral', 'check-in', 'checkin',
+                         'очк', 'балл', 'награ', 'уровен', 'аккаунт', 'реферал', 'чек-ин']),
       run: (q, c) => {
         if (!c.state.registered) {
           return {
-            text: `Points live on an account, and you are browsing as a guest.\n\nSigning up takes a minute and gives you <b>${BONUS.signup} points</b> plus the prep checklist. After that your check-ins here start adding up.`,
-            chips: ['Sign up', 'Plan my lay day', 'Where to eat fish?']
+            text: L(`Points live on an account, and you are browsing as a guest.\n\nSigning up takes a minute and gives you <b>${BONUS.signup} points</b> plus the prep checklist. After that your check-ins here start adding up.`,
+                    `Очки живут в аккаунте, а вы смотрите как гость.\n\nРегистрация занимает минуту и сразу даёт <b>${BONUS.signup} очков</b> и чек-лист подготовки. После неё чек-ины начнут копиться.`),
+            chips: L(['Sign up', 'Plan my lay day', 'Where to eat?'],
+                     ['Зарегистрироваться', 'Собери план на день', 'Где поесть?'])
           };
         }
-        const top = [...D().points].sort((a, b) => b.pts - a.pts).slice(0, 3);
+        const top = [...c.dest.points].sort((a, b) => b.pts - a.pts).slice(0, 3);
+        const rows = top.map(p => `  – ${T(p.name)}: <b>+${p.pts}</b>`).join('\n');
         return {
-          text: `<b>${c.state.name}</b> · ${c.level.name}, <b>${c.state.points}</b> points, ${c.state.checkins.length} check-ins ashore.\n\n`
-            + `The highest-scoring places in town:\n${top.map(p => `  – ${p.name}: <b>+${p.pts}</b>`).join('\n')}`,
+          text: L(`<b>${c.state.name}</b> · ${T(c.level.name)}, <b>${c.state.points}</b> points, ${c.state.checkins.length} check-ins ashore.\n\nThe highest-scoring places here:\n${rows}`,
+                  `<b>${c.state.name}</b> · ${T(c.level.name)}, <b>${c.state.points}</b> очков, чек-инов: ${c.state.checkins.length}.\n\nСамые «дорогие» места здесь:\n${rows}`),
           cards: top,
-          chips: ['Plan my lay day', 'What can I spend points on?', 'Sunset spot?']
+          chips: L(['Plan my lay day', 'What can I spend points on?', 'Sunset spot?'],
+                   ['Собери план на день', 'На что потратить очки?', 'Куда на закат?'])
         };
       }
     }
@@ -230,23 +259,29 @@ const Guide = (() => {
     const q = norm(query);
     for (const it of INTENTS) if (it.test(q)) return it.run(q, c);
 
-    const found = rank(words(query)).slice(0, 3);
+    const found = rank(c.dest, words(query)).slice(0, 3);
     if (found.length) {
       return {
-        text: `Here is what matches in <b>Göcek</b>:\n\n${bullet(found)}`,
+        text: L(`Here is what matches in <b>${T(c.dest.city)}</b>:\n\n${bullet(found)}`,
+                `Вот что нашёл в городе <b>${T(c.dest.city)}</b>:\n\n${bullet(found)}`),
         cards: found,
-        chips: ['Plan my lay day', 'Where to eat?', 'No wind — what now?']
+        chips: L(['Plan my lay day', 'Where to eat?', 'No racing — what now?'],
+                 ['Собери план на день', 'Где поесть?', 'Гонок нет — что делать?'])
       };
     }
     return {
-      text: `No exact match ashore. I know ${D().points.length} places in Göcek — prices, hours and the right time of day for each.\n\nTry: “where to eat fish”, “what to do on a lay day”, “sunset spot”, “where to fix a sail”. For anything about the boat, the tiers or getting here, switch to the crew assistant.`,
-      chips: ['Plan my lay day', 'No wind — what now?', 'Where to eat fish?']
+      text: L(`No exact match ashore. I know ${c.dest.points.length} places in ${T(c.dest.city)} — prices, hours and the right time of day for each.\n\nTry: “where to eat”, “lay day plan”, “sunset spot”, “where to fix a sail”. Anything about the boat, tiers or getting here is the crew assistant.`,
+              `Точного совпадения нет. Я знаю ${c.dest.points.length} мест в городе ${T(c.dest.city)} — цены, часы и время суток для каждого.\n\nПопробуйте: «где поесть», «план на день без гонок», «куда на закат», «где починить парус». Всё про лодку, тарифы и дорогу — к ассистенту экипажа.`),
+      chips: L(['Plan my lay day', 'Where to eat?', 'Sunset spot?'],
+               ['Собери план на день', 'Где поесть?', 'Куда на закат?'])
     };
   }
 
-  const WELCOME = () => ({
-    text: `I am the town guide for <b>Göcek</b>. ${D().blurb}\n\nI know ${D().points.length} places here — prices, opening hours and the right time of day for each. Ask me like you would ask a local.`,
-    chips: ['Plan my lay day', 'Where to eat fish?', 'No wind — what now?', 'Sunset spot?']
+  const WELCOME = dest => ({
+    text: L(`I am the town guide for <b>${T(dest.city)}</b>. ${T(dest.blurb)}\n\nI know ${dest.points.length} places here — prices, opening hours and the right time of day for each.`,
+            `Я гид по городу <b>${T(dest.city)}</b>. ${T(dest.blurb)}\n\nЗнаю здесь ${dest.points.length} мест: цены, часы работы и время суток, когда туда идти.`),
+    chips: L(['Plan my lay day', 'Where to eat?', 'Sunset spot?', 'How many points do I have?'],
+             ['Собери план на день', 'Где поесть?', 'Куда на закат?', 'Сколько у меня очков?'])
   });
 
   return { answer, WELCOME };

@@ -1,320 +1,844 @@
-/* Charter Key — content. Demo data: venue names, prices and availability are illustrative. */
+/* Charter Key — content (en/ru). Demo data: venue names, prices and availability are illustrative. */
 
 const BOAT = {
-  name: 'Looping',
-  type: '36 ft offshore one-design',
-  designer: 'Farr-designed hull, fractional rig',
+  name: 'Looping-class',
+  type: { en: '36 ft offshore one-design', ru: 'офшорный монотип 36 футов' },
+  line: { en: 'One identical boat in every venue, so a week in Newport and a week in San Francisco differ by the coastline, not by the hardware under your hands.',
+          ru: 'В каждой акватории стоит одинаковая лодка: неделя в Ньюпорте и неделя в Сан-Франциско отличаются береговой линией, а не матчастью под руками.' },
   specs: [
-    { label: 'Length', value: '36 ft / 11.0 m' },
-    { label: 'Crew aboard', value: '8 racing, 6 offshore' },
-    { label: 'Sails', value: 'Carbon laminate inventory, 2 spinnakers' },
-    { label: 'Offshore kit', value: 'Liferaft, AIS, EPIRB, storm jib, trysail' },
-    { label: 'Comfort', value: 'Diesel cabin heater, hot water, 3 cabins' },
-    { label: 'Rating', value: 'IRC endorsed certificate' }
+    { label: { en: 'Length',      ru: 'Длина' },        value: { en: '36 ft / 11.0 m', ru: '36 футов / 11,0 м' } },
+    { label: { en: 'Crew aboard', ru: 'Экипаж' },       value: { en: '8 racing, 6 offshore', ru: '8 в гонке, 6 в офшоре' } },
+    { label: { en: 'Sails',       ru: 'Паруса' },       value: { en: 'Carbon laminate, 2 spinnakers', ru: 'Карбоновый ламинат, 2 спинакера' } },
+    { label: { en: 'Offshore kit',ru: 'Офшорный набор'},value: { en: 'Liferaft, AIS, EPIRB, storm jib', ru: 'Плот, AIS, аварийный буй, штормовой стаксель' } },
+    { label: { en: 'Comfort',     ru: 'Быт' },          value: { en: 'Cabin heater, hot water, 3 cabins', ru: 'Обогреватель, горячая вода, 3 каюты' } },
+    { label: { en: 'Rating',      ru: 'Обмер' },        value: { en: 'IRC endorsed certificate', ru: 'Сертификат IRC endorsed' } }
   ]
 };
 
-const DESTINATION = {
-  id: 'gocek',
-  city: 'Göcek',
-  region: 'Türkiye · Gulf of Fethiye',
-  blurb: 'Twelve islands, pines running down to the water and a marina where half the Aegean fleet ties up.',
-  season: 'March — November',
-  wind: 'Meltemi, 8–14 kn after midday',
-  water: '24 °C / 75 °F in season',
-  airport: 'Dalaman (DLM) — 25 min by road',
-  accent: '#3ddad7',
-  map: {
-    viewBox: '0 0 1000 620',
-    land: [
-      'M0,0 H1000 V96 C930,132 902,196 826,214 C742,234 712,288 624,290 C548,292 512,246 428,240 C336,234 300,178 214,186 C142,192 96,150 40,150 C22,150 8,120 0,104 Z',
-      'M0,392 C58,372 96,404 150,426 C206,449 214,512 178,556 C146,596 62,606 0,592 Z',
-      'M868,620 C848,552 886,498 946,472 C976,459 1000,452 1000,452 V620 Z'
-    ],
-    islands: [
-      'M556,432 C596,414 654,428 662,460 C670,492 626,516 586,508 C544,500 522,448 556,432 Z',
-      'M712,352 C744,338 786,352 788,378 C790,404 754,420 724,410 C694,400 686,364 712,352 Z',
-      'M392,472 C420,460 452,472 452,494 C452,516 420,528 396,518 C372,508 368,482 392,472 Z',
-      'M268,368 C288,360 310,370 308,386 C306,402 282,410 266,400 C250,390 252,374 268,368 Z'
-    ],
-    route: 'M470,340 C560,300 660,318 742,262 C800,222 852,248 878,300',
-    labels: [
-      { x: 12, y: 8,  text: 'Göcek peninsula' },
-      { x: 60, y: 76, text: 'Yassıca isl.' },
-      { x: 75, y: 60, text: 'Tersane isl.' },
-      { x: 34, y: 86, text: 'Bedri Rahmi bay' }
+const DESTINATIONS = [
+  {
+    id: 'annapolis', flag: '\u{1F1FA}\u{1F1F8}',
+    city:   { en: 'Annapolis', ru: 'Аннаполис' },
+    region: { en: 'Maryland \u00b7 Chesapeake Bay', ru: 'Мэриленд \u00b7 Чесапикский залив' },
+    blurb:  { en: 'The busiest sailing town in America by boats per head, and the shallowest water on this list. Tactics matter more than muscle here.',
+              ru: 'Самый «яхтенный» город Америки по числу лодок на душу и самая мелкая вода в списке. Здесь тактика важнее силы.' },
+    season: { en: 'April \u2014 November', ru: 'Апрель \u2014 ноябрь' },
+    wind:   { en: 'Light to moderate, 6\u201314 kn', ru: 'Слабый и умеренный, 6\u201314 узлов' },
+    water:  { en: '24 \u00b0C / 76 \u00b0F in August', ru: '+24 \u00b0C в августе' },
+    airport:{ en: 'Baltimore (BWI) \u2014 35 min', ru: 'Балтимор (BWI) \u2014 35 мин' },
+    travel: { en: 'BWI is 35 minutes away, Washington Dulles about 90. Domestic flights into all three DC-area airports, and the town itself is walkable end to end.',
+              ru: 'BWI в 35 минутах, Даллес примерно в 90. Внутренние рейсы во все три аэропорта столичного региона, а сам город обходится пешком из конца в конец.' },
+    accent: '#3ddad7',
+    map: {
+      viewBox: '0 0 1000 620',
+      land: [
+        'M0,0 H1000 V110 C918,140 872,196 792,214 C704,234 668,292 580,296 C500,300 462,252 380,248 C300,244 262,190 180,196 C112,201 58,164 0,180 Z',
+        'M0,430 C70,404 140,438 196,478 C248,516 246,570 214,620 H0 Z',
+        'M1000,620 H690 C706,556 760,514 830,498 C900,482 962,502 1000,470 Z'
+      ],
+      islands: [
+        'M520,380 C566,364 620,386 616,420 C612,454 560,472 518,456 C476,440 482,396 520,380 Z',
+        'M700,330 C730,318 762,332 758,354 C754,376 720,388 694,374 C668,360 676,342 700,330 Z'
+      ],
+      route: 'M330,320 C420,362 520,330 610,362 C690,390 750,360 800,318',
+      labels: [
+        { x: 10, y: 10, text: { en: 'Annapolis', ru: 'Аннаполис' } },
+        { x: 52, y: 66, text: { en: 'Greenbury Shoal', ru: 'отмель Гринбери' } },
+        { x: 74, y: 50, text: { en: 'Bay Bridge', ru: 'мост через залив' } }
+      ]
+    },
+    points: [
+      { id: 'an-yard', cat: 'yacht', x: 20, y: 40, pts: 40,
+        name:  { en: 'Spa Creek Boatyard', ru: 'Верфь на Спа-Крик' },
+        price: { en: '$4.00 / ft / night', ru: '$4,00 / фут / ночь' },
+        time:  { en: '24/7', ru: '24/7' },
+        desc:  { en: 'Slips five minutes from the start area, a lift that runs six days a week and a crew room with showers and a washer that is always free before eight.',
+                 ru: 'Причалы в пяти минутах от стартового района, подъёмник шесть дней в неделю и комната экипажа с душем и стиралкой, которая до восьми утра всегда свободна.' },
+        tip:   { en: 'Ask for the outside face of C dock: you can leave the boat rigged and walk off the bow.',
+                 ru: 'Просите внешнюю сторону причала C: лодку можно оставить в готовности и сходить прямо с носа.' },
+        tags:   ['yacht','marina','berth','service','base','shower','laundry'],
+        tagsRu: ['яхта','марина','швартовка','сервис','база','душ','прачечная'] },
+
+      { id: 'an-rig', cat: 'yacht', x: 26, y: 30, pts: 35,
+        name:  { en: 'Eastport Rigging', ru: 'Такелажная в Истпорте' },
+        price: { en: 'by the job', ru: 'по работам' },
+        time:  { en: '07:30–17:30', ru: '07:30–17:30' },
+        desc:  { en: 'Wire, rod and running rigging, plus a loft upstairs that will look at a blown-out headsail while you wait.',
+                 ru: 'Трос, прутки и бегучий такелаж, а наверху мастерская, где посмотрят вытянувшийся стаксель, пока вы ждёте.' },
+        tip:   { en: 'Halyard failures are the local speciality — they keep spares in stock for every common size.',
+                 ru: 'Оборванные фалы здесь профильная болезнь: запасные держат под все ходовые размеры.' },
+        tags:   ['repair','yacht','rigging','sails','service','urgent'],
+        tagsRu: ['ремонт','яхта','такелаж','паруса','сервис','срочно'] },
+
+      { id: 'an-light', cat: 'see', x: 64, y: 70, pts: 65,
+        name:  { en: 'Thomas Point Light', ru: 'Маяк Томас-Пойнт' },
+        price: { en: 'free from the water', ru: 'бесплатно с воды' },
+        time:  { en: 'daylight', ru: 'светлое время' },
+        desc:  { en: 'A screwpile lighthouse standing on its legs in open water since 1875, and the most photographed mark on the bay.',
+                 ru: 'Свайный маяк, стоящий на ногах в открытой воде с 1875 года, и самый фотографируемый знак залива.' },
+        tip:   { en: 'Ask the coach to leave it to starboard on the way home — it costs fifteen minutes and everyone takes the photo.',
+                 ru: 'Попросите тренера оставить его справа на обратном пути: пятнадцать минут, и фото сделают все.' },
+        tags:   ['view','history','photo','water','sunset'],
+        tagsRu: ['вид','история','фото','вода','закат'] },
+
+      { id: 'an-seawall', cat: 'see', x: 30, y: 60, pts: 50,
+        name:  { en: 'Horn Point Seawall', ru: 'Набережная Хорн-Пойнт' },
+        price: { en: 'free', ru: 'бесплатно' },
+        time:  { en: 'dawn to dusk', ru: 'от рассвета до заката' },
+        desc:  { en: 'A low wall where the creek meets the bay. Every fleet in town has to pass it on the way out, which makes it the best free grandstand on the water.',
+                 ru: 'Низкая стенка там, где ручей выходит в залив. Мимо неё проходит на дистанцию весь местный флот — лучшая бесплатная трибуна на воде.' },
+        tip:   { en: 'Be there an hour before the first start to see the whole fleet tune up.',
+                 ru: 'Приходите за час до первого старта: увидите, как весь флот настраивается.' },
+        tags:   ['view','walk','free','photo','morning'],
+        tagsRu: ['вид','прогулка','бесплатно','фото','утро'] },
+
+      { id: 'an-paddle', cat: 'do', x: 24, y: 50, pts: 55,
+        name:  { en: 'Spa Creek Paddle', ru: 'Гребля по Спа-Крик' },
+        price: { en: '$30 / 2 hours', ru: '$30 / 2 часа' },
+        time:  { en: '08:00–19:00', ru: '08:00–19:00' },
+        desc:  { en: 'Flat water up the creek past four boatyards and a drawbridge, with more classic wooden boats per mile than anywhere else in the country.',
+                 ru: 'Гладкая вода вверх по ручью мимо четырёх верфей и разводного моста: классических деревянных лодок на километр больше, чем где-либо в стране.' },
+        tip:   { en: 'Go early. After ten the creek fills with launches and the wake makes it hard work.',
+                 ru: 'Идите рано: после десяти ручей заполняют катера, и волна превращает прогулку в работу.' },
+        tags:   ['activity','water','morning','crew','kids','calm'],
+        tagsRu: ['активность','вода','утро','команда','дети','штиль'] },
+
+      { id: 'an-bike', cat: 'do', x: 36, y: 78, pts: 45,
+        name:  { en: 'Bay Trail Ride', ru: 'Велотрасса вдоль залива' },
+        price: { en: '$25 bike hire', ru: '$25 аренда велосипеда' },
+        time:  { en: 'all day', ru: 'весь день' },
+        desc:  { en: 'Thirteen miles of rail trail out of town, flat the whole way, with the bay on your shoulder for half of it.',
+                 ru: 'Двадцать километров по бывшей железной дороге из города, всё время ровно, и половину пути залив за плечом.' },
+        tip:   { en: 'A lay day classic: ride out, eat, ride back. It takes exactly the afternoon.',
+                 ru: 'Классика дня без гонок: доехать, поесть, вернуться. Занимает ровно половину дня.' },
+        tags:   ['activity','lay day','nature','day','crew'],
+        tagsRu: ['активность','день без гонок','природа','день','команда'] },
+
+      { id: 'an-crab', cat: 'eat', x: 22, y: 34, pts: 55,
+        name:  { en: 'Second Street Crab House', ru: 'Краб-хаус на Второй улице' },
+        price: { en: '$35–60', ru: '$35–60' },
+        time:  { en: '11:30–23:00', ru: '11:30–23:00' },
+        desc:  { en: 'Brown paper on the tables, mallets in a bucket and steamed blue crab by the dozen. Loud, messy and the reason people come back.',
+                 ru: 'Бумага на столах, молотки в ведре и голубой краб на пару дюжинами. Шумно, грязно — и именно за этим возвращаются.' },
+        tip:   { en: 'Order the large crabs, not the dozen special. The small ones are twenty minutes of work for two bites.',
+                 ru: 'Берите крупных крабов, а не «дюжину по акции»: мелкие — двадцать минут работы ради двух укусов.' },
+        tags:   ['dinner','fish','after racing','crew','evening'],
+        tagsRu: ['ужин','рыба','после гонки','команда','вечер'] },
+
+      { id: 'an-coffee', cat: 'eat', x: 26, y: 24, pts: 30,
+        name:  { en: 'Mainsail Coffee', ru: 'Кофейня «Грот»' },
+        price: { en: '$5–12', ru: '$5–12' },
+        time:  { en: '06:00–14:00', ru: '06:00–14:00' },
+        desc:  { en: 'Opens at six, two blocks from the yard, and the pastry case is empty by nine because every crew in town comes through.',
+                 ru: 'Открывается в шесть, в двух кварталах от верфи, а витрина с выпечкой пустеет к девяти — через неё проходит весь местный флот.' },
+        tip:   { en: 'Pre-order for the crew the night before; they will have it bagged with your boat name on it.',
+                 ru: 'Закажите на экипаж с вечера: соберут пакет и подпишут названием лодки.' },
+        tags:   ['breakfast','coffee','morning','cheap','quick','before racing'],
+        tagsRu: ['завтрак','кофе','утро','дёшево','быстро','перед гонкой'] },
+
+      { id: 'an-pub', cat: 'night', x: 30, y: 44, pts: 40,
+        name:  { en: 'Eastport Pub', ru: 'Паб в Истпорте' },
+        price: { en: '$8–16', ru: '$8–16' },
+        time:  { en: '16:00–01:00', ru: '16:00–01:00' },
+        desc:  { en: 'Across the bridge from the tourists, where the crews actually drink. Results go up on the chalkboard before they go online.',
+                 ru: 'За мостом от туристов, там, где пьют сами экипажи. Результаты появляются на грифельной доске раньше, чем в интернете.' },
+        tip:   { en: 'Walk, do not drive. The bridge opens on the hour and you will be waiting on the wrong side of it.',
+                 ru: 'Идите пешком, не на машине: мост разводят каждый час, и вы окажетесь не на той стороне.' },
+        tags:   ['night','bar','crew','after racing','music'],
+        tagsRu: ['ночь','бар','команда','после гонки','музыка'] }
     ]
   },
-  points: [
-    { id: 'gc-marina', cat: 'yacht', x: 30, y: 33, pts: 40,
-      name: 'Göcek Harbour Marina', price: '€55–90 / night', time: '24/7',
-      desc: 'Berths for 180 visiting boats, water and power on the pier, showers and laundry — the base for every race week.',
-      tip: 'Race-week berths sell out two months ahead. Pier D is closest to the race office.',
-      tags: ['yacht','marina','berth','service','base','shower','fuel'] },
 
-    { id: 'gc-bedri', cat: 'see', x: 37, y: 80, pts: 60,
-      name: 'Bedri Rahmi Bay', price: 'free', time: 'all day',
-      desc: 'A quiet bay with a fish painted on the rock by a Turkish artist in 1974. Deep enough by the shore to come in on the dinghy.',
-      tip: 'Arrive before 10am — a dozen gulets anchor here by midday.',
-      tags: ['sunset','photo','nature','quiet','history','snorkelling','romantic'] },
+  {
+    id: 'newport', flag: '🇺🇸',
+    city:   { en: 'Newport', ru: 'Ньюпорт' },
+    region: { en: 'Rhode Island · Narragansett Bay', ru: 'Род-Айленд · залив Наррагансетт' },
+    blurb:  { en: 'The town that has hosted more America’s Cup campaigns than anywhere else, and still smells of varnish and fog in the morning.',
+              ru: 'Город, принявший больше кампаний Кубка Америки, чем любой другой, и по утрам всё ещё пахнущий лаком и туманом.' },
+    season: { en: 'May — October', ru: 'Май — октябрь' },
+    wind:   { en: 'Southerly sea breeze, 12–18 kn', ru: 'Южный бриз, 12–18 узлов' },
+    water:  { en: '20 °C / 68 °F in August', ru: '+20 °C в августе' },
+    airport:{ en: 'Providence (PVD) — 45 min', ru: 'Провиденс (PVD) — 45 мин' },
+    travel: { en: 'Fly into Providence (45 min) or Boston (90 min). No transfer needed if you rent — parking at the yard is included for crew.',
+              ru: 'Прилёт в Провиденс (45 мин) или Бостон (90 мин). Трансфер не нужен, если берёте машину: парковка на верфи для экипажа включена.' },
+    accent: '#7c9cff',
+    map: {
+      viewBox: '0 0 1000 620',
+      land: [
+        'M0,0 H420 C430,80 392,126 348,168 C296,218 300,286 246,330 C190,376 120,362 60,404 C30,425 12,470 0,492 Z',
+        'M1000,0 V240 C946,268 900,246 860,286 C816,330 826,404 770,432 C712,461 660,430 618,466 C586,494 586,560 560,620 H1000 Z',
+        'M0,620 H300 C286,570 236,548 186,552 C120,558 54,586 0,570 Z'
+      ],
+      islands: [
+        'M470,300 C512,286 560,306 556,338 C552,370 506,388 470,374 C434,360 436,312 470,300 Z',
+        'M636,168 C664,158 692,172 688,192 C684,212 652,222 630,210 C608,198 614,178 636,168 Z'
+      ],
+      route: 'M390,420 C470,380 540,412 620,372 C686,340 742,362 780,330',
+      labels: [
+        { x: 10, y: 10, text: { en: 'Newport', ru: 'Ньюпорт' } },
+        { x: 78, y: 12, text: { en: 'Jamestown', ru: 'Джеймстаун' } },
+        { x: 48, y: 56, text: { en: 'East Passage', ru: 'Восточный проход' } }
+      ]
+    },
+    points: [
+      { id: 'np-yard', cat: 'yacht', x: 22, y: 42, pts: 40,
+        name:  { en: 'Thames Street Yard', ru: 'Верфь на Темз-стрит' },
+        price: { en: '$4.50 / ft / night', ru: '$4,50 / фут / ночь' },
+        time:  { en: '24/7', ru: '24/7' },
+        desc:  { en: 'Deep-water slips, a travel lift that runs until dark and a crew lounge with showers, laundry and coffee that is free and bad.',
+                 ru: 'Глубоководные места, травелифт до темноты и комната экипажа с душем, прачечной и бесплатным плохим кофе.' },
+        tip:   { en: 'Ask for a slip on the outer float — you get the breeze and none of the tour boat wake.',
+                 ru: 'Просите место на внешнем понтоне: там бриз и нет волны от прогулочных катеров.' },
+        tags:   ['yacht','marina','berth','service','base','shower','laundry'],
+        tagsRu: ['яхта','марина','швартовка','сервис','база','душ','прачечная'] },
 
-    { id: 'gc-yassica', cat: 'do', x: 61, y: 75, pts: 70,
-      name: 'Yassıca Islands', price: '€25 per person', time: '09:00–18:00',
-      desc: 'Flat islets with a sandbar between them. Clear water, snorkelling and lazy wades from one island to the next.',
-      tip: 'Bring a mask: there is a seagrass field with cuttlefish off the southern point.',
-      tags: ['snorkelling','water','sup','kids','crew','day','activity','calm'] },
+      { id: 'np-loft', cat: 'yacht', x: 17, y: 30, pts: 35,
+        name:  { en: 'Bannister Sail Loft', ru: 'Парусная мастерская «Баннистер»' },
+        price: { en: 'by the job', ru: 'по работам' },
+        time:  { en: '07:00–18:00', ru: '07:00–18:00' },
+        desc:  { en: 'Third-generation loft above the wharf. Recuts, repairs and honest advice about whether your kite is finished.',
+                 ru: 'Мастерская в третьем поколении над причалом. Перекрой, ремонт и честный ответ, жив ли ещё ваш спинакер.' },
+        tip:   { en: 'Drop a torn sail before 9am and it is usually back on the boat by evening.',
+                 ru: 'Привезите порванный парус до 9 утра — к вечеру он обычно уже на лодке.' },
+        tags:   ['repair','sails','service','urgent','yacht'],
+        tagsRu: ['ремонт','паруса','сервис','срочно','яхта'] },
 
-    { id: 'gc-tersane', cat: 'eat', x: 74, y: 57, pts: 50,
-      name: 'Tersane Taverna', price: '₺900–1600 (~$25–45)', time: '12:00–23:00',
-      desc: 'Catch of the day over charcoal, six-plate meze and tables right on the pontoon. Guest mooring — come in from the water.',
-      tip: 'Ask for salt-baked sea bass and the wild rocket salad — that is the local kitchen, not the tourist menu.',
-      tags: ['fish','dinner','waterfront','pricey','evening','after racing','crew','meze'] },
+      { id: 'np-cliff', cat: 'see', x: 30, y: 70, pts: 55,
+        name:  { en: 'The Cliff Walk', ru: 'Тропа Клифф-уок' },
+        price: { en: 'free', ru: 'бесплатно' },
+        time:  { en: 'dawn to dusk', ru: 'от рассвета до заката' },
+        desc:  { en: 'Three and a half miles between the Gilded Age mansions and a forty-foot drop into the Atlantic. Half paved, half rock scramble.',
+                 ru: 'Пять с половиной километров между особняками золотого века и двенадцатиметровым обрывом в Атлантику. Половина — асфальт, половина — камни.' },
+        tip:   { en: 'Walk it north to south in the morning; by afternoon the sun is in your eyes the whole way.',
+                 ru: 'Идите с севера на юг утром: после обеда солнце будет бить в глаза всю дорогу.' },
+        tags:   ['view','walk','free','photo','morning','nature'],
+        tagsRu: ['вид','прогулка','бесплатно','фото','утро','природа'] },
 
-    { id: 'gc-kliver', cat: 'eat', x: 24, y: 25, pts: 30,
-      name: 'Jib Coffee', price: '₺180–400 (~$5–11)', time: '07:00–15:00',
-      desc: 'Menemen and simit breakfasts from seven — an hour before the skippers briefing. Takeaway cups that fit the cockpit holder.',
-      tip: 'Order for the whole crew the night before and it will be packed for your time.',
-      tags: ['breakfast','coffee','morning','cheap','quick','before racing'] },
+      { id: 'np-fort', cat: 'see', x: 12, y: 56, pts: 50,
+        name:  { en: 'Fort Adams Point', ru: 'Мыс Форт-Адамс' },
+        price: { en: '$18 tour, free outside', ru: '$18 экскурсия, снаружи бесплатно' },
+        time:  { en: '10:00–17:00', ru: '10:00–17:00' },
+        desc:  { en: 'The granite fort on the point, and the best place on land to watch a fleet beat out of the harbour.',
+                 ru: 'Гранитный форт на мысу и лучшее место на берегу, чтобы смотреть, как флот выбирается из гавани в лавировку.' },
+        tip:   { en: 'Stand on the southwest wall an hour before the start — you see the whole first beat.',
+                 ru: 'Встаньте на юго-западной стене за час до старта: видно всю первую лавировку.' },
+        tags:   ['view','history','photo','crew','day'],
+        tagsRu: ['вид','история','фото','команда','день'] },
 
-    { id: 'gc-goat', cat: 'see', x: 16, y: 20, pts: 55,
-      name: 'Goat Cape Viewpoint', price: 'free', time: 'open 24h',
-      desc: 'Twenty minutes up a pine trail and the whole gulf lies below you. The best sunset spot in the area.',
-      tip: 'Set off 50 minutes before sunset and bring a torch for the way back.',
-      tags: ['sunset','view','photo','walk','free','romantic','evening'] },
+      { id: 'np-kayak', cat: 'do', x: 26, y: 50, pts: 60,
+        name:  { en: 'Harbour Kayak Launch', ru: 'Каяк-станция в гавани' },
+        price: { en: '$35 / 2 hours', ru: '$35 / 2 часа' },
+        time:  { en: '08:00–18:00', ru: '08:00–18:00' },
+        desc:  { en: 'Paddle between the moored twelve-metres and under the bows of boats you have only seen in books.',
+                 ru: 'Гребля между стоящими на бочках двенадцатиметровиками и под носами лодок, которые вы видели только в книгах.' },
+        tip:   { en: 'Go at slack water. On the ebb the harbour mouth will take you somewhere you did not plan.',
+                 ru: 'Идите в стоячую воду: на отливе вас вынесет туда, куда вы не собирались.' },
+        tags:   ['activity','water','morning','crew','kids'],
+        tagsRu: ['активность','вода','утро','команда','дети'] },
 
-    { id: 'gc-school', cat: 'do', x: 33, y: 40, pts: 65,
-      name: 'Dinghy Training Centre', price: '€60 / session', time: '09:00–19:00',
-      desc: 'Two-hour dinghy sessions: starts, tacking, boom handling. Useful the day before your first race week.',
-      tip: 'Practising the start sequence in a dinghy removes half the nerves in race one.',
-      tags: ['lesson','sailing','activity','crew','sport','day','training'] },
+      { id: 'np-drive', cat: 'do', x: 40, y: 82, pts: 45,
+        name:  { en: 'Ocean Drive Loop', ru: 'Круг по Оушен-драйв' },
+        price: { en: '$25 bike hire', ru: '$25 аренда велосипеда' },
+        time:  { en: 'all day', ru: 'весь день' },
+        desc:  { en: 'Ten miles of coast road past Brenton Point, where the wind you were racing in comes ashore.',
+                 ru: 'Шестнадцать километров прибрежной дороги мимо мыса Брентон, где ветер, в котором вы гонялись, выходит на берег.' },
+        tip:   { en: 'Ride it at 6pm. Kite flyers at Brenton Point, and the light is worth the detour.',
+                 ru: 'Езжайте в 18:00: на мысу запускают воздушных змеев, а свет стоит крюка.' },
+        tags:   ['activity','lay day','view','sunset','day'],
+        tagsRu: ['активность','день без гонок','вид','закат','день'] },
 
-    { id: 'gc-sup', cat: 'do', x: 44, y: 44, pts: 45,
-      name: 'Dawn SUP Station', price: '€20 / hour', time: '06:30–11:00',
-      desc: 'Boards from 6:30, while the bay is still glass. A loop along the pines to the far cape takes about an hour at an easy pace.',
-      tip: 'The right call on a lay day when racing is abandoned for lack of wind.',
-      tags: ['sup','morning','calm','activity','water','quiet','cheap','lay day'] },
+      { id: 'np-chowder', cat: 'eat', x: 20, y: 36, pts: 50,
+        name:  { en: 'Bowline Chowder House', ru: 'Чаудер-хаус «Боулайн»' },
+        price: { en: '$28–45', ru: '$28–45' },
+        time:  { en: '11:30–22:00', ru: '11:30–22:00' },
+        desc:  { en: 'Quahog chowder, a raw bar and a back room that has absorbed sixty years of post-race arguments.',
+                 ru: 'Чаудер из куахогов, устричный бар и задний зал, впитавший шестьдесят лет послегоночных споров.' },
+        tip:   { en: 'Sit at the bar. The kitchen is faster and the bartender knows which boat won.',
+                 ru: 'Садитесь за барную стойку: кухня быстрее, а бармен знает, кто выиграл.' },
+        tags:   ['dinner','fish','after racing','crew','evening'],
+        tagsRu: ['ужин','рыба','после гонки','команда','вечер'] },
 
-    { id: 'gc-stag', cat: 'night', x: 25, y: 51, pts: 40,
-      name: 'The Stay Bar', price: '₺250–600 (~$7–17)', time: '18:00–02:00',
-      desc: 'A terrace over the pier, live guitar on Thursdays and a board where crews pin their burgees. After the last race the whole fleet ends up here.',
-      tip: 'Rail tables are gone by 7pm — book during the day.',
-      tags: ['night','bar','party','crew','after racing','music'] },
+      { id: 'np-coffee', cat: 'eat', x: 24, y: 26, pts: 30,
+        name:  { en: 'Quarterdeck Coffee', ru: 'Кофейня «Квартердек»' },
+        price: { en: '$6–14', ru: '$6–14' },
+        time:  { en: '06:00–14:00', ru: '06:00–14:00' },
+        desc:  { en: 'Opens at six for the delivery crews. Breakfast sandwiches, proper espresso and a whiteboard with the day’s forecast.',
+                 ru: 'Открывается в шесть для перегонных экипажей. Сэндвичи на завтрак, нормальный эспрессо и доска с прогнозом на день.' },
+        tip:   { en: 'They will fill your crew thermos for the price of two cups if you ask.',
+                 ru: 'Если попросить, наполнят термос на экипаж по цене двух стаканов.' },
+        tags:   ['breakfast','coffee','morning','cheap','quick','before racing'],
+        tagsRu: ['завтрак','кофе','утро','дёшево','быстро','перед гонкой'] },
 
-    { id: 'gc-bazaar', cat: 'see', x: 12, y: 10, pts: 35,
-      name: 'Saturday Market', price: 'from ₺100', time: 'Sat 08:00–16:00',
-      desc: 'Rows of olives, mountain-village cheese and loose spices. Half the crews do their week of provisioning here.',
-      tip: 'Bargain in the afternoon — prices drop towards closing.',
-      tags: ['market','groceries','cheap','morning','provisioning','local'] },
+      { id: 'np-tavern', cat: 'night', x: 18, y: 46, pts: 40,
+        name:  { en: 'Dock Street Tavern', ru: 'Таверна на Док-стрит' },
+        price: { en: '$9–18', ru: '$9–18' },
+        time:  { en: '16:00–01:00', ru: '16:00–01:00' },
+        desc:  { en: 'Low ceilings, a bar rail worn smooth, and a rule that whoever hit the mark buys the first round.',
+                 ru: 'Низкие потолки, стёртая до гладкости стойка и правило: кто задел знак — с того первый круг.' },
+        tip:   { en: 'Thursday is crew night — arrive before 8pm or stand.',
+                 ru: 'Четверг — вечер экипажей: приходите до 20:00 или стойте.' },
+        tags:   ['night','bar','crew','after racing','music'],
+        tagsRu: ['ночь','бар','команда','после гонки','музыка'] }
+    ]
+  },
 
-    { id: 'gc-hamam', cat: 'do', x: 15, y: 40, pts: 50,
-      name: 'Deniz Hammam', price: '₺700 (~$20)', time: '10:00–22:00',
-      desc: 'A classic hammam with foam massage. After three days of hiking the rail your back needs this more than another dinner.',
-      tip: 'Go in the evening after racing — muscles respond worse in the morning.',
-      tags: ['recovery','spa','evening','relax','after racing','back'] },
+  {
+    id: 'sfbay', flag: '🇺🇸',
+    city:   { en: 'San Francisco', ru: 'Сан-Франциско' },
+    region: { en: 'California · The Bay', ru: 'Калифорния · залив' },
+    blurb:  { en: 'Cold water, 25 knots by two in the afternoon and a five-knot flood under the bridge. The hardest sailing on this list, and the crews here know it.',
+              ru: 'Холодная вода, 25 узлов к двум часам дня и пятиузловое течение под мостом. Самая сложная акватория в списке, и местные экипажи это знают.' },
+    season: { en: 'April — October', ru: 'Апрель — октябрь' },
+    wind:   { en: 'Westerly, 18–25 kn most afternoons', ru: 'Западный, 18–25 узлов почти каждый день' },
+    water:  { en: '14 °C / 57 °F — wear the layers', ru: '+14 °C — одевайтесь слоями' },
+    airport:{ en: 'SFO or OAK — 30–40 min', ru: 'SFO или OAK — 30–40 мин' },
+    travel: { en: 'Fly into SFO or Oakland; the yard is 30–40 minutes by rideshare. Domestic flights only, so most crews arrive the morning of the first training day.',
+              ru: 'Прилёт в SFO или Окленд, до верфи 30–40 минут на такси. Рейсы внутренние, поэтому большинство приезжает утром первого тренировочного дня.' },
+    accent: '#ffb347',
+    map: {
+      viewBox: '0 0 1000 620',
+      land: [
+        'M0,0 H1000 V120 C920,140 880,96 800,110 C716,124 690,180 604,186 C520,192 486,140 402,152 C330,162 300,120 216,128 C146,134 70,104 0,124 Z',
+        'M0,330 C90,306 150,352 196,404 C240,452 224,540 180,584 C140,620 60,614 0,600 Z',
+        'M1000,620 H520 C540,552 606,512 686,500 C784,486 900,510 1000,470 Z'
+      ],
+      islands: [
+        'M520,330 C574,312 640,336 636,376 C632,416 572,438 524,420 C476,402 478,346 520,330 Z',
+        'M726,262 C756,250 790,264 786,288 C782,312 746,324 720,310 C694,296 700,274 726,262 Z'
+      ],
+      route: 'M300,250 C390,300 470,262 560,300 C640,334 700,300 760,250',
+      labels: [
+        { x: 8,  y: 9,  text: { en: 'Marin Headlands', ru: 'Марин-Хедлендс' } },
+        { x: 50, y: 60, text: { en: 'Angel Island', ru: 'о. Энджел' } },
+        { x: 14, y: 78, text: { en: 'The City', ru: 'город' } }
+      ]
+    },
+    points: [
+      { id: 'sf-marina', cat: 'yacht', x: 20, y: 62, pts: 40,
+        name:  { en: 'Gashouse Cove Guest Docks', ru: 'Гостевые причалы Гэсхаус-Коув' },
+        price: { en: '$3.80 / ft / night', ru: '$3,80 / фут / ночь' },
+        time:  { en: '24/7', ru: '24/7' },
+        desc:  { en: 'The boat lives here between events: slips out of the worst of the chop, hot showers and a gate code that works.',
+                 ru: 'Между событиями лодка стоит здесь: места, закрытые от основной толчеи, горячий душ и рабочий код на воротах.' },
+        tip:   { en: 'Arrive before the afternoon breeze. Docking here at 3pm in 25 knots is a character-building exercise.',
+                 ru: 'Приходите до дневного ветра: швартовка здесь в 15:00 при 25 узлах — упражнение на характер.' },
+        tags:   ['yacht','marina','berth','service','base','shower'],
+        tagsRu: ['яхта','марина','швартовка','сервис','база','душ'] },
 
-    { id: 'gc-rig', cat: 'yacht', x: 32, y: 17, pts: 35,
-      name: 'Rigging 24 Service', price: 'by the job', time: '08:00–20:00',
-      desc: 'Sails, standing rigging, small hull repairs. During race week they stay open until the last customer.',
-      tip: 'A torn luff gets same-day service if you bring it in before 2pm.',
-      tags: ['repair','yacht','sails','service','urgent'] }
-  ]
-};
+      { id: 'sf-rig', cat: 'yacht', x: 26, y: 70, pts: 35,
+        name:  { en: 'Bay Rigging Works', ru: 'Мастерская Bay Rigging' },
+        price: { en: 'by the job', ru: 'по работам' },
+        time:  { en: '08:00–17:00', ru: '08:00–17:00' },
+        desc:  { en: 'Wire, rod, hydraulics and a workshop that has re-rigged half the boats racing on the Bay.',
+                 ru: 'Трос, прутки, гидравлика и мастерская, которая перевооружила половину гоняющихся в заливе лодок.' },
+        tip:   { en: 'They stock spare halyards in the common sizes — a broken one need not cost you a day.',
+                 ru: 'Держат запасные фалы ходовых размеров: лопнувший не обязан стоить вам дня.' },
+        tags:   ['repair','yacht','rigging','service','urgent'],
+        tagsRu: ['ремонт','яхта','такелаж','сервис','срочно'] },
 
-const DESTINATIONS = [DESTINATION];
+      { id: 'sf-battery', cat: 'see', x: 12, y: 18, pts: 65,
+        name:  { en: 'Battery Spencer Overlook', ru: 'Смотровая Бэттери-Спенсер' },
+        price: { en: 'free', ru: 'бесплатно' },
+        time:  { en: 'sunrise to 21:00', ru: 'с рассвета до 21:00' },
+        desc:  { en: 'Directly above the north tower of the bridge. From here the whole racecourse is a diagram with the city behind it.',
+                 ru: 'Прямо над северной опорой моста. Отсюда вся гоночная дистанция выглядит схемой, а за ней город.' },
+        tip:   { en: 'Fog clears from the east. If the city is buried at noon, come back at five.',
+                 ru: 'Туман расходится с востока. Если в полдень город затянут — возвращайтесь к пяти.' },
+        tags:   ['view','photo','free','sunset','nature'],
+        tagsRu: ['вид','фото','бесплатно','закат','природа'] },
+
+      { id: 'sf-fort', cat: 'see', x: 22, y: 34, pts: 50,
+        name:  { en: 'Fort Point', ru: 'Форт-Пойнт' },
+        price: { en: 'free', ru: 'бесплатно' },
+        time:  { en: '10:00–17:00, Fri–Sun', ru: '10:00–17:00, пт–вс' },
+        desc:  { en: 'A brick fort tucked directly under the bridge, where the flood runs past the seawall at five knots and you can watch it from a metre away.',
+                 ru: 'Кирпичный форт прямо под мостом: приливное течение идёт вдоль стенки пятью узлами, и на него можно смотреть с метра.' },
+        tip:   { en: 'Stand here for ten minutes before your first race and the current chart starts to make sense.',
+                 ru: 'Постойте здесь десять минут перед первой гонкой — и карта течений станет понятной.' },
+        tags:   ['view','history','photo','free','crew'],
+        tagsRu: ['вид','история','фото','бесплатно','команда'] },
+
+      { id: 'sf-angel', cat: 'do', x: 52, y: 58, pts: 70,
+        name:  { en: 'Angel Island Loop', ru: 'Круг по острову Энджел' },
+        price: { en: '$15 ferry', ru: '$15 паром' },
+        time:  { en: '09:00–17:00', ru: '09:00–17:00' },
+        desc:  { en: 'Eight kilometres of trail around an island in the middle of the racecourse, with a view of the Bay from every angle.',
+                 ru: 'Восемь километров тропы вокруг острова посреди гоночной дистанции — залив виден со всех сторон.' },
+        tip:   { en: 'Take the first ferry. The last one leaves earlier than you think and nobody is coming back for you.',
+                 ru: 'Берите первый паром: последний уходит раньше, чем кажется, и за вами никто не вернётся.' },
+        tags:   ['activity','lay day','nature','view','day','crew'],
+        tagsRu: ['активность','день без гонок','природа','вид','день','команда'] },
+
+      { id: 'sf-crissy', cat: 'do', x: 16, y: 44, pts: 45,
+        name:  { en: 'Crissy Field Beach', ru: 'Пляж Крисси-Филд' },
+        price: { en: 'free', ru: 'бесплатно' },
+        time:  { en: 'all day', ru: 'весь день' },
+        desc:  { en: 'Where the kiteboarders go when it is honking. Two kilometres of beach path with the bridge at the end of it.',
+                 ru: 'Куда уходят кайтеры, когда задувает. Два километра дорожки вдоль пляжа, в конце — мост.' },
+        tip:   { en: 'Best run of the week is here at 8am, before the wind fills and while it is still glassy.',
+                 ru: 'Лучшая пробежка недели — здесь в 8 утра, пока ветер не наполнил и вода зеркальная.' },
+        tags:   ['activity','morning','free','water','crew'],
+        tagsRu: ['активность','утро','бесплатно','вода','команда'] },
+
+      { id: 'sf-oyster', cat: 'eat', x: 30, y: 48, pts: 55,
+        name:  { en: 'Pier 33 Oyster Counter', ru: 'Устричная на 33-м пирсе' },
+        price: { en: '$35–60', ru: '$35–60' },
+        time:  { en: '12:00–22:00', ru: '12:00–22:00' },
+        desc:  { en: 'Twelve stools, a raw bar and cioppino that fixes a crew that has been cold since eleven in the morning.',
+                 ru: 'Двенадцать стульев, устричный бар и чоппино, который чинит экипаж, замёрзший с одиннадцати утра.' },
+        tip:   { en: 'No bookings. Send one person ahead from the dock — the queue is 40 minutes after 7pm.',
+                 ru: 'Без брони. Отправьте одного человека с причала вперёд: после 19:00 очередь 40 минут.' },
+        tags:   ['dinner','fish','after racing','crew','evening'],
+        tagsRu: ['ужин','рыба','после гонки','команда','вечер'] },
+
+      { id: 'sf-fog', cat: 'eat', x: 24, y: 56, pts: 30,
+        name:  { en: 'Fog Signal Coffee', ru: 'Кофейня «Фог-сигнал»' },
+        price: { en: '$5–12', ru: '$5–12' },
+        time:  { en: '06:30–15:00', ru: '06:30–15:00' },
+        desc:  { en: 'Five minutes from the dock, opens early, and the breakfast burrito is the reason half the crew is on time.',
+                 ru: 'Пять минут от причала, открывается рано, а буррито на завтрак — причина, по которой половина экипажа приходит вовремя.' },
+        tip:   { en: 'Order the burrito to go. Eating it on the rail in 20 knots is a rite of passage.',
+                 ru: 'Берите буррито с собой: съесть его на перилах при 20 узлах — обряд посвящения.' },
+        tags:   ['breakfast','coffee','morning','cheap','quick','before racing'],
+        tagsRu: ['завтрак','кофе','утро','дёшево','быстро','перед гонкой'] },
+
+      { id: 'sf-tap', cat: 'night', x: 34, y: 64, pts: 40,
+        name:  { en: 'The Gate Taproom', ru: 'Пивная «Зе Гейт»' },
+        price: { en: '$8–16', ru: '$8–16' },
+        time:  { en: '15:00–00:00', ru: '15:00–00:00' },
+        desc:  { en: 'A long table that sailing crews have claimed by default, and a heater on the patio because this is San Francisco in July.',
+                 ru: 'Длинный стол, который по умолчанию занимают гоночные экипажи, и обогреватель на террасе — потому что это Сан-Франциско в июле.' },
+        tip:   { en: 'Bring the layer you raced in. The patio is colder than the water was.',
+                 ru: 'Берите слой, в котором гонялись: на террасе холоднее, чем было на воде.' },
+        tags:   ['night','bar','crew','after racing'],
+        tagsRu: ['ночь','бар','команда','после гонки'] }
+    ]
+  },
+
+  {
+    id: 'miami', flag: '🇺🇸',
+    city:   { en: 'Miami', ru: 'Майами' },
+    region: { en: 'Florida · Biscayne Bay', ru: 'Флорида · залив Бискейн' },
+    blurb:  { en: 'Warm water in January, flat bay racing inside the keys and the Gulf Stream an hour offshore when you want the real thing.',
+              ru: 'Тёплая вода в январе, гладкая вода внутри кис и Гольфстрим в часе хода, когда хочется настоящего.' },
+    season: { en: 'November — April', ru: 'Ноябрь — апрель' },
+    wind:   { en: 'Trade winds, 12–20 kn', ru: 'Пассат, 12–20 узлов' },
+    water:  { en: '25 °C / 77 °F in winter', ru: '+25 °C зимой' },
+    airport:{ en: 'Miami (MIA) — 20 min', ru: 'Майами (MIA) — 20 мин' },
+    travel: { en: 'MIA is twenty minutes from the marina and served from everywhere. The winter series is the easiest event on the calendar to reach from the US or Europe.',
+              ru: 'MIA в двадцати минутах от марины и связан со всем миром. Зимняя серия — самое лёгкое событие календаря по дороге из США и Европы.' },
+    accent: '#ff8a5c',
+    map: {
+      viewBox: '0 0 1000 620',
+      land: [
+        'M0,0 H300 C316,90 280,150 244,206 C204,268 214,352 176,412 C140,470 66,482 0,500 Z',
+        'M1000,0 V90 C930,120 880,190 872,272 C864,356 890,430 862,500 C838,560 800,590 790,620 H1000 Z',
+        'M0,620 H260 C244,576 186,556 130,562 C76,568 34,592 0,586 Z'
+      ],
+      islands: [
+        'M560,240 C600,226 650,244 648,276 C646,308 598,326 560,312 C522,298 524,254 560,240 Z',
+        'M470,430 C500,418 534,432 530,454 C526,476 490,488 464,474 C438,460 444,442 470,430 Z',
+        'M690,400 C714,390 740,402 736,420 C732,438 706,448 686,436 C666,424 672,410 690,400 Z'
+      ],
+      route: 'M330,300 C420,340 520,310 610,346 C690,378 750,352 800,300',
+      labels: [
+        { x: 8,  y: 12, text: { en: 'Coconut Grove', ru: 'Коконат-Гроув' } },
+        { x: 56, y: 40, text: { en: 'Key Biscayne', ru: 'Ки-Бискейн' } },
+        { x: 44, y: 74, text: { en: 'The sandbar', ru: 'песчаная банка' } }
+      ]
+    },
+    points: [
+      { id: 'mi-marina', cat: 'yacht', x: 18, y: 40, pts: 40,
+        name:  { en: 'Grove Harbour Marina', ru: 'Марина Гроув-Харбор' },
+        price: { en: '$4.20 / ft / night', ru: '$4,20 / фут / ночь' },
+        time:  { en: '24/7', ru: '24/7' },
+        desc:  { en: 'Floating docks under the palms, fuel on site and a ten-minute run out to the racecourse.',
+                 ru: 'Плавучие причалы под пальмами, заправка на месте и десять минут хода до дистанции.' },
+        tip:   { en: 'Rinse everything. A week of salt in this heat destroys blocks faster than a season anywhere else.',
+                 ru: 'Промывайте всё: неделя соли в такой жаре убивает блоки быстрее, чем сезон где-либо ещё.' },
+        tags:   ['yacht','marina','berth','service','base','fuel'],
+        tagsRu: ['яхта','марина','швартовка','сервис','база','заправка'] },
+
+      { id: 'mi-rig', cat: 'yacht', x: 24, y: 30, pts: 35,
+        name:  { en: 'Bayside Rigging', ru: 'Такелажная Bayside' },
+        price: { en: 'by the job', ru: 'по работам' },
+        time:  { en: '08:00–18:00', ru: '08:00–18:00' },
+        desc:  { en: 'Splices, furlers and electronics, two minutes from the dock. They work through the winter series because everyone is here.',
+                 ru: 'Сплесни, закрутки и электроника в двух минутах от причала. В зимнюю серию работают без выходных — все здесь.' },
+        tip:   { en: 'Book the day before during series week; walk-ins wait until the evening.',
+                 ru: 'В неделю серии записывайтесь накануне: без записи придётся ждать до вечера.' },
+        tags:   ['repair','yacht','rigging','service','urgent'],
+        tagsRu: ['ремонт','яхта','такелаж','сервис','срочно'] },
+
+      { id: 'mi-stilts', cat: 'see', x: 62, y: 62, pts: 70,
+        name:  { en: 'Stiltsville', ru: 'Стилтсвилл' },
+        price: { en: 'free from the water', ru: 'бесплатно с воды' },
+        time:  { en: 'daylight', ru: 'светлое время' },
+        desc:  { en: 'Seven wooden houses standing on pilings a mile offshore, left over from the 1930s. Best seen from a boat at low sun.',
+                 ru: 'Семь деревянных домов на сваях в полутора километрах от берега, оставшихся с 1930-х. Лучше всего смотреть с лодки на низком солнце.' },
+        tip:   { en: 'Ask the coach to run past on the way back from the course — it costs ten minutes.',
+                 ru: 'Попросите тренера пройти мимо на обратном пути с дистанции: это десять минут.' },
+        tags:   ['view','history','photo','water','sunset'],
+        tagsRu: ['вид','история','фото','вода','закат'] },
+
+      { id: 'mi-vizcaya', cat: 'see', x: 14, y: 22, pts: 55,
+        name:  { en: 'Vizcaya Gardens', ru: 'Сады Вискайя' },
+        price: { en: '$25', ru: '$25' },
+        time:  { en: '09:30–16:30, closed Tue', ru: '09:30–16:30, вт выходной' },
+        desc:  { en: 'An Italian villa built on the bay in 1916, with a stone barge moored in front of it as a breakwater.',
+                 ru: 'Итальянская вилла на берегу залива 1916 года, перед ней — каменная баржа вместо волнолома.' },
+        tip:   { en: 'Go at opening. By eleven it is a wedding photo queue in 30-degree heat.',
+                 ru: 'Приходите к открытию: к одиннадцати это очередь свадебных фотосессий при тридцати градусах.' },
+        tags:   ['history','photo','morning','day','nature'],
+        tagsRu: ['история','фото','утро','день','природа'] },
+
+      { id: 'mi-snorkel', cat: 'do', x: 58, y: 44, pts: 70,
+        name:  { en: 'Key Biscayne Reef Snorkel', ru: 'Снорклинг у рифа Ки-Бискейн' },
+        price: { en: '$60 with gear', ru: '$60 со снаряжением' },
+        time:  { en: '09:00–16:00', ru: '09:00–16:00' },
+        desc:  { en: 'Shallow patch reef twenty minutes out, warm enough in January to go in without a wetsuit.',
+                 ru: 'Мелкий участок рифа в двадцати минутах хода, в январе достаточно тёплый, чтобы зайти без гидрокостюма.' },
+        tip:   { en: 'Morning only. The afternoon trade wind puts a metre of chop over the whole reef.',
+                 ru: 'Только утром: дневной пассат нагоняет на риф метровую волну.' },
+        tags:   ['snorkelling','water','activity','kids','crew','morning'],
+        tagsRu: ['снорклинг','вода','активность','дети','команда','утро'] },
+
+      { id: 'mi-sandbar', cat: 'do', x: 44, y: 74, pts: 50,
+        name:  { en: 'The Sandbar', ru: 'Песчаная банка' },
+        price: { en: 'free', ru: 'бесплатно' },
+        time:  { en: 'low tide', ru: 'на малой воде' },
+        desc:  { en: 'Waist-deep water in the middle of the bay where half the city anchors on a Sunday. Loud, shallow and entirely the point.',
+                 ru: 'Вода по пояс посреди залива, где по воскресеньям якорится половина города. Шумно, мелко и в этом весь смысл.' },
+        tip:   { en: 'Anchor on the upwind edge and check the tide table — people get stuck here every weekend.',
+                 ru: 'Якорьтесь с наветренного края и сверьтесь с таблицей приливов: здесь садятся каждые выходные.' },
+        tags:   ['activity','water','crew','lay day','day'],
+        tagsRu: ['активность','вода','команда','день без гонок','день'] },
+
+      { id: 'mi-fish', cat: 'eat', x: 20, y: 48, pts: 55,
+        name:  { en: 'Grove Fish House', ru: 'Рыбный дом «Гроув»' },
+        price: { en: '$30–55', ru: '$30–55' },
+        time:  { en: '12:00–23:00', ru: '12:00–23:00' },
+        desc:  { en: 'Hogfish, stone crab in season and a dock you can tie the tender to while you eat.',
+                 ru: 'Хогфиш, каменный краб в сезон и причал, к которому можно привязать тузик на время ужина.' },
+        tip:   { en: 'Stone crab runs October to May. Outside that, everything claiming to be fresh is not.',
+                 ru: 'Каменный краб — с октября по май. Вне сезона всё, что называют свежим, таковым не является.' },
+        tags:   ['dinner','fish','waterfront','after racing','crew','evening'],
+        tagsRu: ['ужин','рыба','вода','после гонки','команда','вечер'] },
+
+      { id: 'mi-cafe', cat: 'eat', x: 26, y: 24, pts: 30,
+        name:  { en: 'Cortadito Counter', ru: 'Кофейня «Кортадито»' },
+        price: { en: '$3–9', ru: '$3–9' },
+        time:  { en: '06:00–15:00', ru: '06:00–15:00' },
+        desc:  { en: 'A window on the street, Cuban coffee that removes the need for a second opinion, and pastelitos by the box.',
+                 ru: 'Окно на улицу, кубинский кофе, после которого второе мнение не требуется, и пастелитос коробками.' },
+        tip:   { en: 'Order a colada for the crew — one cup, six thimbles, the correct amount of caffeine.',
+                 ru: 'Берите коладу на экипаж: один стакан, шесть напёрстков, ровно столько кофеина, сколько нужно.' },
+        tags:   ['breakfast','coffee','morning','cheap','quick','before racing'],
+        tagsRu: ['завтрак','кофе','утро','дёшево','быстро','перед гонкой'] },
+
+      { id: 'mi-rum', cat: 'night', x: 30, y: 56, pts: 40,
+        name:  { en: 'Rum Line Terrace', ru: 'Терраса «Ром-лайн»' },
+        price: { en: '$12–22', ru: '$12–22' },
+        time:  { en: '17:00–02:00', ru: '17:00–02:00' },
+        desc:  { en: 'Open terrace over the water, a daiquiri list that takes rum seriously and the fleet’s unofficial prize-giving venue.',
+                 ru: 'Открытая терраса над водой, серьёзная карта дайкири и неофициальное место награждения флота.' },
+        tip:   { en: 'The upstairs deck is quieter and has the same list at the same price.',
+                 ru: 'Верхняя палуба тише, а карта и цены те же.' },
+        tags:   ['night','bar','crew','after racing','music'],
+        tagsRu: ['ночь','бар','команда','после гонки','музыка'] }
+    ]
+  }
+];
 
 const CATEGORIES = [
-  { id: 'all',   icon: '◎', label: 'All' },
-  { id: 'eat',   icon: '🍽', label: 'Where to eat' },
-  { id: 'see',   icon: '👁', label: 'What to see' },
-  { id: 'do',    icon: '⛵', label: 'What to do' },
-  { id: 'night', icon: '🌙', label: 'Evening' },
-  { id: 'yacht', icon: '⚓', label: 'Yacht services' }
+  { id: 'all',   icon: '◎', label: { en: 'All',            ru: 'Всё' } },
+  { id: 'eat',   icon: '🍽', label: { en: 'Where to eat',   ru: 'Что поесть' } },
+  { id: 'see',   icon: '👁', label: { en: 'What to see',    ru: 'Что увидеть' } },
+  { id: 'do',    icon: '⛵', label: { en: 'What to do',     ru: 'Чем заняться' } },
+  { id: 'night', icon: '🌙', label: { en: 'Evening',        ru: 'Вечер' } },
+  { id: 'yacht', icon: '⚓', label: { en: 'Yacht services', ru: 'Яхт-сервис' } }
 ];
 
 const CAT_META = {
-  eat:   { color: '#ff8a5c', label: 'Food' },
-  see:   { color: '#7c9cff', label: 'Sights' },
-  do:    { color: '#3ddad7', label: 'Activity' },
-  night: { color: '#c78bff', label: 'Night' },
-  yacht: { color: '#ffd166', label: 'Yachting' }
+  eat:   { color: '#ff8a5c', label: { en: 'Food',     ru: 'Еда' } },
+  see:   { color: '#7c9cff', label: { en: 'Sights',   ru: 'Посмотреть' } },
+  do:    { color: '#3ddad7', label: { en: 'Activity', ru: 'Занятие' } },
+  night: { color: '#c78bff', label: { en: 'Night',    ru: 'Ночь' } },
+  yacht: { color: '#ffd166', label: { en: 'Yachting', ru: 'Яхтинг' } }
 };
 
 const COLLECTIONS = [
-  { id: 'calm',   title: 'Lay day, no wind',        sub: 'Four hours worth spending',        match: ['lay day','calm','sup','activity','nature'] },
-  { id: 'after',  title: 'Dinner after racing',     sub: 'Where the fleet gathers',          match: ['after racing','dinner','crew','fish'] },
-  { id: 'dawn',   title: 'The dawn routine',        sub: 'From 6 to 9am',                    match: ['morning','calm','breakfast','coffee'] },
-  { id: 'family', title: 'With the shore crew',     sub: 'Partners, kids, non-sailors',      match: ['kids','crew','water','snorkelling'] },
-  { id: 'body',   title: 'Fix your back',           sub: 'After three days on the rail',     match: ['recovery','spa','relax'] },
-  { id: 'wow',    title: 'One big moment',          sub: 'Worth staying an extra day for',   match: ['sunset','view','photo','nature'] }
+  { id: 'calm',   match: ['lay day','calm','activity','nature','morning'],
+    title: { en: 'Lay day, no racing', ru: 'День без гонок' },
+    sub:   { en: 'Four hours worth spending', ru: 'Четыре часа, которые не жалко' } },
+  { id: 'after',  match: ['after racing','dinner','crew','fish'],
+    title: { en: 'Dinner after racing', ru: 'Ужин после гонки' },
+    sub:   { en: 'Where the fleet gathers', ru: 'Где собирается весь флот' } },
+  { id: 'dawn',   match: ['morning','breakfast','coffee','before racing'],
+    title: { en: 'The dawn routine', ru: 'Рассветный режим' },
+    sub:   { en: 'From 6 to 9am', ru: 'С 6 до 9 утра' } },
+  { id: 'family', match: ['kids','crew','water','snorkelling'],
+    title: { en: 'With the shore crew', ru: 'С командой поддержки' },
+    sub:   { en: 'Partners, kids, non-sailors', ru: 'Партнёры, дети, не-яхтсмены' } },
+  { id: 'wow',    match: ['sunset','view','photo','history'],
+    title: { en: 'One big moment', ru: 'Одно большое впечатление' },
+    sub:   { en: 'Worth staying an extra day for', ru: 'Ради чего стоит остаться на день' } },
+  { id: 'fix',    match: ['repair','sails','rigging','urgent','service'],
+    title: { en: 'When something breaks', ru: 'Когда что-то сломалось' },
+    sub:   { en: 'Same-day, if you go early', ru: 'В тот же день, если приехать рано' } }
 ];
 
-/* ── Berths: three tiers on the same boat ── */
 const TIERS = [
-  {
-    id: 'rail', name: 'Rail', tag: 'First time on a race boat',
-    price: 890, unit: '/ race week', pts: 300,
-    line: 'You sail the whole regatta as active crew — hiking, grinding, learning the boat from the inside.',
-    includes: [
-      'Berth aboard for the full event, 6 nights',
-      'Pre-race briefing and safety drill',
-      'Rail, grinding and mainsheet trim under instruction',
-      'Daily debrief with the tactician',
-      'Foul weather gear and life jacket provided'
-    ],
-    spots: 4
-  },
-  {
-    id: 'trim', name: 'Trim', tag: 'You have raced before', featured: true,
-    price: 1490, unit: '/ race week', pts: 500,
-    line: 'A defined position for the week — trim, pit or bow — with the coaching to actually own it.',
-    includes: [
-      'Everything in Rail',
-      'One position for the whole week, not a rotation',
-      'Two coached training days before the first gun',
-      'Video review of your manoeuvres',
-      'Racing Rules Essentials course included ($149)'
-    ],
-    spots: 3
-  },
-  {
-    id: 'helm', name: 'Helm & Tactics', tag: 'You want the wheel',
-    price: 2690, unit: '/ race week', pts: 900,
-    line: 'Guaranteed time steering the boat and calling the beat, with a professional beside you, not instead of you.',
-    includes: [
-      'Everything in Trim',
-      '6+ hours on the helm across training days',
-      'You drive at least one scored race',
-      'One-to-one tactics sessions, start to finish',
-      'Support with your own IRC endorsed certificate',
-      'All Academy courses included ($596)'
-    ],
-    spots: 2
-  }
+  { id: 'rail', price: 890, pts: 300, spots: 4,
+    name: { en: 'Rail', ru: 'Перила' },
+    tag:  { en: 'First time on a race boat', ru: 'Первый раз на гоночной лодке' },
+    unit: { en: '/ race week', ru: '/ гоночная неделя' },
+    line: { en: 'You sail the whole regatta as active crew — hiking, grinding, learning the boat from the inside.',
+            ru: 'Вы идёте всю регату активным членом экипажа: откренивание, лебёдки, лодка изнутри.' },
+    includes: {
+      en: ['Berth aboard for the full event, 6 nights','Pre-race briefing and safety drill','Rail, grinding and mainsheet trim under instruction','Daily debrief with the tactician','Foul weather gear and life jacket provided'],
+      ru: ['Место на борту на всё событие, 6 ночей','Брифинг и отработка аварийных действий','Откренивание, лебёдки и гика-шкот под руководством тренера','Ежедневный разбор с тактиком','Непромоканец и спасжилет выдаём']
+    } },
+  { id: 'trim', price: 1490, pts: 500, spots: 3, featured: true,
+    name: { en: 'Trim', ru: 'Шкотовый' },
+    tag:  { en: 'You have raced before', ru: 'Вы уже гонялись' },
+    unit: { en: '/ race week', ru: '/ гоночная неделя' },
+    line: { en: 'A defined position for the week — trim, pit or bow — with the coaching to actually own it.',
+            ru: 'Одна позиция на всю неделю — шкоты, кокпит или бак — и тренер, чтобы вы её действительно освоили.' },
+    includes: {
+      en: ['Everything in Rail','One position for the whole week, not a rotation','Two coached training days before the first gun','Video review of your manoeuvres','Racing Rules Essentials course included ($149)'],
+      ru: ['Всё, что в тарифе «Перила»','Одна позиция на всю неделю, а не ротация','Два тренировочных дня с тренером до первого выстрела','Видеоразбор ваших манёвров','Курс «Правила гонок» включён ($149)']
+    } },
+  { id: 'helm', price: 2690, pts: 900, spots: 2,
+    name: { en: 'Helm & Tactics', ru: 'Руль и тактика' },
+    tag:  { en: 'You want the wheel', ru: 'Вам нужен штурвал' },
+    unit: { en: '/ race week', ru: '/ гоночная неделя' },
+    line: { en: 'Guaranteed time steering the boat and calling the beat, with a professional beside you, not instead of you.',
+            ru: 'Гарантированное время за штурвалом и на тактике, с профессионалом рядом, а не вместо вас.' },
+    includes: {
+      en: ['Everything in Trim','6+ hours on the helm across training days','You drive at least one scored race','One-to-one tactics sessions, start to finish','Support with your own IRC endorsed certificate','All Academy courses included ($596)'],
+      ru: ['Всё, что в тарифе «Шкотовый»','6+ часов на руле за тренировочные дни','Вы рулите минимум в одной зачётной гонке','Индивидуальные сессии по тактике, от старта до финиша','Помощь с собственным сертификатом IRC endorsed','Все курсы академии включены ($596)']
+    } }
 ];
 
-/* ── Events ── */
 const REGATTAS = [
-  { id: 'r1', name: 'Winter Trophy Series', date: '14–19 February 2027', level: 'Open',
-    fleet: 'IRC mixed fleet, 40+ boats', spots: 3, pts: 400,
-    line: 'Five races in flat water and steady breeze. The friendliest event of the year for a first regatta.' },
-  { id: 'r2', name: 'Spring Cup', date: '8–10 May 2027', level: 'Amateur',
-    fleet: 'IRC cruising and racing divisions', spots: 6, pts: 300,
-    line: 'Three days, short courses, long evenings. Half the fleet is on its first or second event.' },
-  { id: 'r3', name: 'Race Week', date: '11–17 October 2027', level: 'Rated',
-    fleet: 'IRC and one-design, 60+ boats', spots: 2, pts: 500,
-    line: 'The main event of the season. Coastal and windward-leeward races, full race village ashore.' },
-  { id: 'r4', name: 'Offshore Passage — 400 nm', date: '2–6 November 2027', level: 'Offshore',
-    fleet: 'Offshore category 3, night sailing', spots: 4, pts: 700,
-    line: 'Four days and three nights at sea, watch system, spinnaker under the stars. The one people come back for.' }
+  { id: 'r1', city: 'miami', spots: 3, pts: 400,
+    name:  { en: 'Biscayne Winter Series', ru: 'Зимняя серия Бискейн' },
+    date:  { en: '14–19 January 2027', ru: '14–19 января 2027' },
+    level: { en: 'Open', ru: 'Открытая' },
+    fleet: { en: 'IRC mixed fleet, 40+ boats', ru: 'Смешанный флот IRC, 40+ лодок' },
+    line:  { en: 'Five races in flat water and warm trade wind. The friendliest event of the year for a first regatta.',
+             ru: 'Пять гонок в гладкой воде и тёплом пассате. Самое дружелюбное событие года для первой регаты.' } },
+  { id: 'r2', city: 'miami', spots: 4, pts: 700,
+    name:  { en: 'Gulf Stream Passage — 180 nm', ru: 'Переход через Гольфстрим — 180 миль' },
+    date:  { en: '5–8 March 2027', ru: '5–8 марта 2027' },
+    level: { en: 'Offshore', ru: 'Офшор' },
+    fleet: { en: 'Offshore category 3, one night at sea', ru: 'Офшор, категория 3, одна ночь в море' },
+    line:  { en: 'Your first night watch in water that is 25 degrees. The gentlest way to find out whether offshore is for you.',
+             ru: 'Первая ночная вахта в воде +25. Самый мягкий способ понять, ваш ли это офшор.' } },
+  { id: 'r3', city: 'annapolis', spots: 3, pts: 400,
+    name:  { en: 'Spring Series', ru: 'Весенняя серия' },
+    date:  { en: '8–10 May 2027', ru: '8–10 мая 2027' },
+    level: { en: 'Amateur', ru: 'Любительская' },
+    fleet: { en: 'IRC cruising and racing divisions', ru: 'Круизный и гоночный дивизионы IRC' },
+    line:  { en: 'Three days, short courses, long evenings. Half the fleet is on its first or second event.',
+             ru: 'Три дня, короткие дистанции, долгие вечера. Половина флота на первом или втором событии.' } },
+  { id: 'r4', city: 'newport', spots: 2, pts: 500,
+    name:  { en: 'Around the Island Race', ru: 'Гонка вокруг острова' },
+    date:  { en: '17–19 July 2027', ru: '17–19 июля 2027' },
+    level: { en: 'Rated', ru: 'Рейтинговая' },
+    fleet: { en: 'IRC and one-design, 60+ boats', ru: 'IRC и монотипы, 60+ лодок' },
+    line:  { en: 'Twenty-two miles around Conanicut with a tide gate at each end. Navigation matters more than boat speed.',
+             ru: 'Тридцать пять километров вокруг острова с приливными воротами на обоих концах. Навигация важнее скорости.' } },
+  { id: 'r5', city: 'newport', spots: 4, pts: 700,
+    name:  { en: 'Block Island Offshore — 186 nm', ru: 'Офшор до Блок-Айленда — 186 миль' },
+    date:  { en: '13–16 August 2027', ru: '13–16 августа 2027' },
+    level: { en: 'Offshore', ru: 'Офшор' },
+    fleet: { en: 'Offshore category 3, two nights at sea', ru: 'Офшор, категория 3, две ночи в море' },
+    line:  { en: 'Out past Block, round the mark in the dark, home on one long reach. The classic New England offshore weekend.',
+             ru: 'Мимо Блока, знак в темноте и длинный галс домой. Классический офшорный уикенд Новой Англии.' } },
+  { id: 'r6', city: 'sfbay', spots: 2, pts: 500,
+    name:  { en: 'Golden Gate Series', ru: 'Серия «Золотые Ворота»' },
+    date:  { en: '11–13 June 2027', ru: '11–13 июня 2027' },
+    level: { en: 'Rated', ru: 'Рейтинговая' },
+    fleet: { en: 'One-design, 30+ boats', ru: 'Монотипы, 30+ лодок' },
+    line:  { en: 'Windward-leewards in 22 knots and five knots of current. You will be tired and you will be quicker by Sunday.',
+             ru: 'Петли в 22 узла ветра и пять узлов течения. Вы устанете и к воскресенью станете быстрее.' } },
+  { id: 'r7', city: 'sfbay', spots: 3, pts: 700,
+    name:  { en: 'Farallones Race — 58 nm', ru: 'Гонка к Фараллонам — 58 миль' },
+    date:  { en: '18–19 September 2027', ru: '18–19 сентября 2027' },
+    level: { en: 'Offshore', ru: 'Офшор' },
+    fleet: { en: 'Offshore category 2, ocean swell', ru: 'Офшор, категория 2, океанская зыбь' },
+    line:  { en: 'Out of the Gate, round the islands and back. Serious water, and the crew list is checked by hand.',
+             ru: 'Из ворот, вокруг островов и обратно. Серьёзная вода, и состав экипажа проверяется вручную.' } },
+  { id: 'r8', city: 'annapolis', spots: 2, pts: 500,
+    name:  { en: 'Fall Regatta Week', ru: 'Осенняя неделя регат' },
+    date:  { en: '11–17 October 2027', ru: '11–17 октября 2027' },
+    level: { en: 'Rated', ru: 'Рейтинговая' },
+    fleet: { en: 'IRC and one-design, 60+ boats', ru: 'IRC и монотипы, 60+ лодок' },
+    line:  { en: 'The biggest fleet of the season. Windward-leeward and distance races, with a full race village ashore.',
+             ru: 'Самый большой флот сезона. Петлевые и дистанционные гонки, полноценная гоночная деревня на берегу.' } },
+  { id: 'r9', city: 'annapolis', spots: 4, pts: 700,
+    name:  { en: 'Bay to Ocean Passage — 320 nm', ru: 'Переход залив — океан, 320 миль' },
+    date:  { en: '2–6 November 2027', ru: '2–6 ноября 2027' },
+    level: { en: 'Offshore', ru: 'Офшор' },
+    fleet: { en: 'Offshore category 3, three nights at sea', ru: 'Офшор, категория 3, три ночи в море' },
+    line:  { en: 'Four days and three nights at sea, watch system, spinnaker under the stars. The one people come back for.',
+             ru: 'Четыре дня и три ночи в море, вахты, спинакер под звёздами. То, ради чего возвращаются.' } }
 ];
 
-/* ── Academy: theory before you step aboard ── */
 const COURSES = [
-  { id: 'c1', title: 'Racing Rules Essentials', price: 149, pts: 1200, time: '2h 40m', level: 'All levels',
-    line: 'The twelve rules that decide 90% of protests, explained on the water instead of on a whiteboard.' },
-  { id: 'c2', title: 'Spinnaker in 25+ Knots', price: 189, pts: 1500, time: '1h 50m', level: 'Intermediate',
-    line: 'Hoist, gybe and drop when it is genuinely windy — filmed on board, mistakes included.' },
-  { id: 'c3', title: 'Starts and the First Beat', price: 149, pts: 1200, time: '2h 10m', level: 'Intermediate',
-    line: 'Line bias, time-on-distance, and what to do when you are buried ten seconds after the gun.' },
-  { id: 'c4', title: 'Sail Trim and Rig Setup', price: 109, pts: 900, time: '1h 30m', level: 'All levels',
-    line: 'Headstay tension, backstay, jib cars: what each control actually does to boat speed.' }
+  { id: 'c1', price: 149, pts: 1200,
+    title: { en: 'Racing Rules Essentials', ru: 'Правила парусных гонок' },
+    time:  { en: '2h 40m', ru: '2 ч 40 мин' }, level: { en: 'All levels', ru: 'Любой уровень' },
+    line:  { en: 'The twelve rules that decide 90% of protests, explained on the water instead of on a whiteboard.',
+             ru: 'Двенадцать правил, которые решают 90% протестов, объяснённые на воде, а не у доски.' } },
+  { id: 'c2', price: 189, pts: 1500,
+    title: { en: 'Spinnaker in 25+ Knots', ru: 'Спинакер в 25+ узлов' },
+    time:  { en: '1h 50m', ru: '1 ч 50 мин' }, level: { en: 'Intermediate', ru: 'Средний' },
+    line:  { en: 'Hoist, gybe and drop when it is genuinely windy — filmed on board, mistakes included.',
+             ru: 'Постановка, поворот и уборка, когда действительно дует, — снято на борту, с ошибками.' } },
+  { id: 'c3', price: 149, pts: 1200,
+    title: { en: 'Starts and the First Beat', ru: 'Старт и первая лавировка' },
+    time:  { en: '2h 10m', ru: '2 ч 10 мин' }, level: { en: 'Intermediate', ru: 'Средний' },
+    line:  { en: 'Line bias, time-on-distance, and what to do when you are buried ten seconds after the gun.',
+             ru: 'Перекос линии, расчёт подхода и что делать, если вас закрыли через десять секунд после выстрела.' } },
+  { id: 'c4', price: 109, pts: 900,
+    title: { en: 'Sail Trim and Rig Setup', ru: 'Настройка парусов и мачты' },
+    time:  { en: '1h 30m', ru: '1 ч 30 мин' }, level: { en: 'All levels', ru: 'Любой уровень' },
+    line:  { en: 'Headstay tension, backstay, jib cars: what each control actually does to boat speed.',
+             ru: 'Натяжение штага, ахтерштаг, каретки стакселя: что каждая регулировка делает со скоростью.' } }
 ];
 
-/* ── Membership: the reason to stay in touch off-season ── */
 const CLUB = {
-  price: 39, unit: '/ month', annual: 390,
-  perks: [
-    'Berths open to members 48 hours before anyone else — the popular events sell out in that window',
-    '10% off every berth and every Academy course',
-    'Monthly live race debrief with the coaching team',
-    'Crew list access: find a boat for events we do not run',
-    'Two guest passes a year for a training day'
-  ]
+  price: 39, annual: 390,
+  unit: { en: '/ month', ru: '/ месяц' },
+  perks: {
+    en: ['Berths open to members 48 hours before anyone else — the popular events sell out in that window',
+         '10% off every berth and every Academy course',
+         'Monthly live race debrief with the coaching team',
+         'Crew list access: find a boat for events we do not run',
+         'Two guest passes a year for a training day'],
+    ru: ['Места открываются членам клуба на 48 часов раньше — популярные события разбирают именно в это окно',
+         'Скидка 10% на любое место и любой курс академии',
+         'Ежемесячный живой разбор гонок с тренерами',
+         'Доступ к крю-листу: найти лодку на события, которые проводим не мы',
+         'Два гостевых пропуска в год на тренировочный день']
+  }
 };
 
-/* ── Crew match quiz ── */
 const QUIZ = [
-  {
-    id: 'exp', q: 'How much racing have you actually done?',
+  { id: 'exp',
+    q: { en: 'How much racing have you actually done?', ru: 'Сколько вы реально гонялись?' },
     options: [
-      { id: 'none', label: 'None — I have sailed, but never raced', score: { rail: 3, trim: 0, helm: 0 } },
-      { id: 'some', label: 'A few club races or one regatta',        score: { rail: 2, trim: 2, helm: 0 } },
-      { id: 'lots', label: 'Several seasons, I know my position',    score: { rail: 0, trim: 3, helm: 2 } },
-      { id: 'own',  label: 'I own or skipper a boat',                score: { rail: 0, trim: 1, helm: 3 } }
-    ]
-  },
-  {
-    id: 'want', q: 'What do you want out of the week?',
+      { id: 'none', score: { rail: 3, trim: 0, helm: 0 }, label: { en: 'None — I have sailed, but never raced', ru: 'Нисколько — ходил под парусом, но не гонялся' } },
+      { id: 'some', score: { rail: 2, trim: 2, helm: 0 }, label: { en: 'A few club races or one regatta', ru: 'Несколько клубных гонок или одна регата' } },
+      { id: 'lots', score: { rail: 0, trim: 3, helm: 2 }, label: { en: 'Several seasons, I know my position', ru: 'Несколько сезонов, свою позицию знаю' } },
+      { id: 'own',  score: { rail: 0, trim: 1, helm: 3 }, label: { en: 'I own or skipper a boat', ru: 'У меня своя лодка или я шкипер' } }
+    ] },
+  { id: 'want',
+    q: { en: 'What do you want out of the week?', ru: 'Что вы хотите получить за неделю?' },
     options: [
-      { id: 'fun',   label: 'Sun, speed and good company',       score: { rail: 3, trim: 1, helm: 0 } },
-      { id: 'skill', label: 'To finally own one position',       score: { rail: 1, trim: 3, helm: 1 } },
-      { id: 'helm',  label: 'Time on the wheel',                 score: { rail: 0, trim: 1, helm: 3 } },
-      { id: 'cert',  label: 'Miles and paperwork for my ticket', score: { rail: 1, trim: 2, helm: 2 } }
-    ]
-  },
-  {
-    id: 'pace', q: 'Which week sounds better?',
+      { id: 'fun',   score: { rail: 3, trim: 1, helm: 0 }, label: { en: 'Sun, speed and good company', ru: 'Солнце, скорость и хорошую компанию' } },
+      { id: 'skill', score: { rail: 1, trim: 3, helm: 1 }, label: { en: 'To finally own one position', ru: 'Наконец освоить одну позицию' } },
+      { id: 'helm',  score: { rail: 0, trim: 1, helm: 3 }, label: { en: 'Time on the wheel', ru: 'Время за штурвалом' } },
+      { id: 'cert',  score: { rail: 1, trim: 2, helm: 2 }, label: { en: 'Miles and paperwork for my ticket', ru: 'Мили и документы для сертификата' } }
+    ] },
+  { id: 'pace',
+    q: { en: 'Which week sounds better?', ru: 'Какая неделя звучит лучше?' },
     options: [
-      { id: 'social',  label: 'Racing by day, long dinners ashore', score: { rail: 3, trim: 1, helm: 0 } },
-      { id: 'serious', label: 'Debrief until we find the two seconds', score: { rail: 0, trim: 2, helm: 3 } },
-      { id: 'mix',     label: 'Both — hard racing, proper evenings', score: { rail: 1, trim: 3, helm: 1 } }
-    ]
-  }
+      { id: 'social',  score: { rail: 3, trim: 1, helm: 0 }, label: { en: 'Racing by day, long dinners ashore', ru: 'Гонки днём, длинные ужины на берегу' } },
+      { id: 'serious', score: { rail: 0, trim: 2, helm: 3 }, label: { en: 'Debrief until we find the two seconds', ru: 'Разбор, пока не найдём те самые две секунды' } },
+      { id: 'mix',     score: { rail: 1, trim: 3, helm: 1 }, label: { en: 'Both — hard racing, proper evenings', ru: 'И то и другое: жёсткие гонки и нормальные вечера' } }
+    ] }
 ];
 
-/* ── Logistics: the effort side of the equation ── */
 const FAQ = [
-  { id: 'f1', q: 'Do I need experience or a licence to join?',
-    a: 'For the Rail tier, no — you need to be able to swim, move around a moving boat and follow instructions under pressure. Trim assumes you have raced before. Helm & Tactics assumes real time on the wheel. No certificate is required to race as crew; you only need paperwork if you intend to skipper a boat yourself.' },
-  { id: 'f2', q: 'How do I get there?',
-    a: 'Fly into Dalaman (DLM), 25 minutes from the marina. From the US that is one stop, usually Istanbul; from Europe there are direct flights all season. We arrange a shared transfer for arriving crew — $20–30 a head, free for members at three referrals. Arrive the day before the first briefing, not the morning of it.' },
-  { id: 'f3', q: 'What does it cost beyond the berth?',
-    a: 'Budget $250–400 for the week: your share of food aboard, marina dinners ashore, and the transfer. Flights, travel insurance and any nights in a hotel before or after are yours. Nothing else is added later — no fuel surcharge, no cleaning fee, no race entry on top.' },
-  { id: 'f4', q: 'What do I pack?',
-    a: 'A soft bag, never a hard suitcase — there is nowhere to stow one. Non-marking deck shoes, two layers you can race in, a warm mid-layer for night sailing, sunglasses on a cord, factor 50, a hat with a strap and seasickness tablets if you are unsure. Foul weather gear and a life jacket are aboard for you.' },
-  { id: 'f5', q: 'Is it safe? What is on board?',
-    a: 'The boat is equipped to Offshore Special Regulations category 3: liferaft, EPIRB, AIS, harnesses and tethers for every crew member, jackstays, storm jib and trysail, two independent bilge pumps, flares and a full first aid kit. Every event starts with a safety brief and a man-overboard drill before the first race.' },
-  { id: 'f6', q: 'Money and cards in Türkiye?',
-    a: 'Visa and Mastercard work everywhere in the marina and in most restaurants. ATMs dispense Turkish lira with a per-transaction cap, so draw cash in two goes rather than one. Do not change money at the airport; the rate in town is better. Tipping is 10% and usually in cash.' },
-  { id: 'f7', q: 'What if I get seasick?',
-    a: 'Most people do at some point. Take the tablets before you leave the dock, not after you feel it, stay on deck, keep your eyes on the horizon and eat something dry. Inshore racing is over by mid-afternoon, so there is an end in sight. On the offshore passage we run a watch system with real rest.' },
-  { id: 'f8', q: 'Can I come alone?',
-    a: 'Most people do. A typical crew is eight people who did not know each other on Saturday and have a group chat by Wednesday. If you are coming as a pair we keep you in the same watch; if you want opposite watches, say so.' }
+  { id: 'f1',
+    q: { en: 'Do I need experience or a licence to join?', ru: 'Нужен ли опыт или права, чтобы поехать?' },
+    a: { en: 'For the Rail tier, no — you need to be able to swim, move around a moving boat and follow instructions under pressure. Trim assumes you have raced before. Helm & Tactics assumes real time on the wheel. No certificate is required to race as crew; you only need paperwork if you intend to skipper a boat yourself.',
+         ru: 'Для тарифа «Перила» — нет. Нужно уметь плавать, двигаться по кренящейся лодке и выполнять команды под нагрузкой. «Шкотовый» предполагает, что вы уже гонялись, «Руль и тактика» — что у вас есть реальные часы за штурвалом. Сертификат для участия в экипаже не нужен: документы понадобятся, только если вы сами хотите быть шкипером.' } },
+  { id: 'f2',
+    q: { en: 'How do I get there?', ru: 'Как добираться?' },
+    a: { en: 'Every venue has its own airport note in the venue panel above the map. As a rule: arrive the day before the first briefing, not the morning of it — a delayed bag has ruined more first days than bad weather. Shared crew transfers are arranged for the overseas venues.',
+         ru: 'У каждой акватории свой аэропорт — он указан в панели над картой. Общее правило: прилетайте за день до первого брифинга, а не утром в день брифинга. Задержанный багаж испортил больше первых дней, чем плохая погода. Для зарубежных акваторий организуем общий трансфер.' } },
+  { id: 'f3',
+    q: { en: 'What does it cost beyond the berth?', ru: 'Во что обойдётся сверх места?' },
+    a: { en: 'Budget $250–400 for the week: your share of food aboard, dinners ashore and the transfer. Flights, travel insurance and hotel nights either side are yours. Nothing is added later — no fuel surcharge, no cleaning fee, no race entry on top.',
+         ru: 'Заложите $250–400 на неделю: ваша доля еды на борту, ужины на берегу и трансфер. Перелёты, страховка и отель до или после — ваши. Ничего не добавляется потом: ни топливного сбора, ни уборки, ни стартового взноса сверху.' } },
+  { id: 'f4',
+    q: { en: 'What do I pack?', ru: 'Что брать с собой?' },
+    a: { en: 'A soft bag, never a hard suitcase — there is nowhere to stow one. Non-marking deck shoes, two layers you can race in, a warm mid-layer for night sailing, sunglasses on a cord, factor 50, a hat with a strap and seasickness tablets if you are unsure. Foul weather gear and a life jacket are aboard for you.',
+         ru: 'Мягкая сумка, а не чемодан: жёсткий кофр некуда убрать. Обувь со светлой нескользящей подошвой, два слоя, в которых можно гоняться, тёплый средний слой на ночь, очки на шнурке, крем 50+, шляпа с завязкой и таблетки от укачивания, если не уверены. Непромоканец и спасжилет уже на борту.' } },
+  { id: 'f5',
+    q: { en: 'Is it safe? What is on board?', ru: 'Насколько это безопасно и что есть на борту?' },
+    a: { en: 'Every boat is equipped to Offshore Special Regulations category 3 (category 2 for the ocean races): liferaft, EPIRB, AIS, harness and tether for every crew member, jackstays, storm jib and trysail, two independent bilge pumps, flares and a full first aid kit. Every event starts with a safety brief and a man-overboard drill before the first race.',
+         ru: 'Каждая лодка укомплектована по офшорным правилам категории 3 (категории 2 для океанских гонок): спасательный плот, аварийный буй, AIS, страховочная система на каждого члена экипажа, леера, штормовой стаксель и трисель, две независимые помпы, пиротехника и полная аптечка. Каждое событие начинается с брифинга и отработки «человек за бортом» до первой гонки.' } },
+  { id: 'f6',
+    q: { en: 'What if I get seasick?', ru: 'А если меня укачает?' },
+    a: { en: 'Most people do at some point, and nobody aboard will make a thing of it. Take the tablets before you leave the dock rather than after you feel it, stay on deck, keep your eyes on the horizon and steer if you can — the person driving is almost never sick. Inshore racing is over by mid-afternoon, so there is an end in sight.',
+         ru: 'Укачивает почти всех и почти всегда, и на борту из этого никто не сделает истории. Таблетки — до отхода от причала, а не когда уже началось. Оставайтесь на палубе, смотрите на горизонт и садитесь на руль, если можно: рулевого почти никогда не укачивает. Прибрежные гонки заканчиваются к середине дня, так что финал близко.' } },
+  { id: 'f7',
+    q: { en: 'Can I come alone?', ru: 'Можно приехать одному?' },
+    a: { en: 'Most people do. A typical crew is eight people who did not know each other on Saturday and have a group chat by Wednesday. If you are coming as a pair we keep you in the same watch; if you want opposite watches, say so.',
+         ru: 'Большинство так и делает. Обычный экипаж — восемь человек, которые в субботу не были знакомы, а к среде завели общий чат. Если едете вдвоём, ставим в одну вахту; хотите в разные — скажите.' } },
+  { id: 'f8',
+    q: { en: 'Can I change or cancel?', ru: 'Можно перенести или отменить?' },
+    a: { en: 'More than 60 days out, the deposit is refunded in full minus a $100 admin fee. Between 30 and 60 days, half. Under 30 days the money stays as credit against any event for twelve months. Moving dates is free once if you are more than 45 days out. Trip insurance is worth the 4% it costs.',
+         ru: 'Больше чем за 60 дней — возвращаем предоплату полностью за вычетом $100 сбора. За 30–60 дней — половину. Меньше 30 дней — деньги остаются депозитом на любое событие в течение года. Перенос даты бесплатен один раз, если до старта больше 45 дней. Страховка поездки стоит своих 4%.' } }
 ];
 
-/* ── Loyalty ── */
 const REWARDS = [
-  { id: 'b1', cost: 400,  code: 'CK-LATE-18', title: 'Late check-out',           sub: 'Stay aboard until 6pm on the last day' },
-  { id: 'b2', cost: 700,  code: 'CK-PROV-01', title: 'First-day provisioning',   sub: 'Starter pack loaded before the crew arrives' },
-  { id: 'b3', cost: 900,  code: 'CK-TRIM-04', title: 'Sail Trim course',         sub: 'Any one Academy module, free' },
-  { id: 'b4', cost: 2000, code: 'CK-HELM-02', title: 'Two extra helm hours',     sub: 'Added to your next training day' },
-  { id: 'b5', cost: 3500, code: 'CK-UPGR-01', title: 'Tier upgrade',             sub: 'Rail to Trim, or Trim to Helm, on your next event' }
+  { id: 'b1', cost: 400,  code: 'CK-LATE-18',
+    title: { en: 'Late check-out', ru: 'Поздний чек-аут' },
+    sub:   { en: 'Stay aboard until 6pm on the last day', ru: 'Остаться на борту до 18:00 в последний день' } },
+  { id: 'b2', cost: 700,  code: 'CK-PROV-01',
+    title: { en: 'First-day provisioning', ru: 'Провизия на первый день' },
+    sub:   { en: 'Starter pack loaded before the crew arrives', ru: 'Стартовый набор загружен до прихода экипажа' } },
+  { id: 'b3', cost: 900,  code: 'CK-TRIM-04',
+    title: { en: 'Any Academy course', ru: 'Любой курс академии' },
+    sub:   { en: 'One module of your choice, free', ru: 'Один модуль на выбор, бесплатно' } },
+  { id: 'b4', cost: 2000, code: 'CK-HELM-02',
+    title: { en: 'Two extra helm hours', ru: 'Два дополнительных часа на руле' },
+    sub:   { en: 'Added to your next training day', ru: 'Добавляются в следующий тренировочный день' } },
+  { id: 'b5', cost: 3500, code: 'CK-UPGR-01',
+    title: { en: 'Tier upgrade', ru: 'Апгрейд тарифа' },
+    sub:   { en: 'Rail to Trim, or Trim to Helm, on your next event', ru: 'С «Перил» на «Шкотового» или со «Шкотового» на «Руль» на следующем событии' } }
 ];
 
 const BONUS = { signup: 300, inviter: 250, invitee: 150 };
 
 const REF_TIERS = [
-  { n: 1, title: 'Academy course',   sub: 'Any module, as soon as your first friend books' },
-  { n: 3, title: 'Free transfer',    sub: 'Airport pick-up for you and your crew, both ways' },
-  { n: 5, title: 'A free race week', sub: 'Rail berth at any event in the calendar' }
+  { n: 1, title: { en: 'Academy course', ru: 'Курс академии' },
+          sub:   { en: 'Any module, as soon as your first friend books', ru: 'Любой модуль, как только первый друг забронирует' } },
+  { n: 3, title: { en: 'Free transfer', ru: 'Бесплатный трансфер' },
+          sub:   { en: 'Airport pick-up for you and your crew, both ways', ru: 'Встреча в аэропорту для вас и экипажа, туда и обратно' } },
+  { n: 5, title: { en: 'A free race week', ru: 'Бесплатная гоночная неделя' },
+          sub:   { en: 'Rail berth at any event in the calendar', ru: 'Место в тарифе «Перила» на любом событии календаря' } }
 ];
 
 const LEVELS = [
-  { id: 'l1', from: 0,    name: 'Deckhand' },
-  { id: 'l2', from: 500,  name: 'Crew' },
-  { id: 'l3', from: 1500, name: 'Trimmer' },
-  { id: 'l4', from: 3500, name: 'Watch Leader' },
-  { id: 'l5', from: 7000, name: 'Skipper' }
+  { id: 'l1', from: 0,    name: { en: 'Deckhand',     ru: 'Юнга' } },
+  { id: 'l2', from: 500,  name: { en: 'Crew',         ru: 'Матрос' } },
+  { id: 'l3', from: 1500, name: { en: 'Trimmer',      ru: 'Шкотовый' } },
+  { id: 'l4', from: 3500, name: { en: 'Watch Leader', ru: 'Вахтенный начальник' } },
+  { id: 'l5', from: 7000, name: { en: 'Skipper',      ru: 'Шкипер' } }
 ];
 
 const LEAD_MAGNET = {
-  title: 'The Offshore Prep Checklist',
-  sub: 'Everything that goes in the bag, on the boat and in your head before a first offshore race.',
-  items: [
-    'Personal kit list by temperature band, with what to leave at home',
-    'The category 3 safety inventory, explained item by item',
-    'Watch systems that work with six people, and the one that does not',
-    'Seasickness: what actually helps, in the order to try it',
-    'The twelve rules that decide almost every protest'
-  ]
+  title: { en: 'The Offshore Prep Checklist', ru: 'Чек-лист подготовки к офшору' },
+  sub:   { en: 'Everything that goes in the bag, on the boat and in your head before a first offshore race.',
+           ru: 'Всё, что кладётся в сумку, на лодку и в голову перед первой офшорной гонкой.' },
+  items: {
+    en: ['Personal kit list by temperature band, with what to leave at home',
+         'The category 3 safety inventory, explained item by item',
+         'Watch systems that work with six people, and the one that does not',
+         'Seasickness: what actually helps, in the order to try it',
+         'The twelve rules that decide almost every protest'],
+    ru: ['Список личного снаряжения по температурным диапазонам и что оставить дома',
+         'Инвентарь безопасности категории 3, разобранный по пунктам',
+         'Вахтенные системы, которые работают вшестером, и одна, которая нет',
+         'Укачивание: что реально помогает, в порядке применения',
+         'Двенадцать правил, которые решают почти каждый протест']
+  }
 };
