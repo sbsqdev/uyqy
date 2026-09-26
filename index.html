@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Charter Key — чартер и карта Гёчека</title>
-<meta name="description" content="Charter Key: чартер яхт в Гёчеке, карта мест города, ИИ-ассистент и ИИ-гид, аккаунт с очками, бонусами и реферальной программой.">
+<title>Charter Key — race a boat in Göcek</title>
+<meta name="description" content="Join the crew of a 36 ft offshore racer in Göcek, Türkiye. Three crew tiers from first-timer to helm, a race calendar, an academy, and two AI assistants for the boat and the town.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -24,27 +24,24 @@
         <path d="M16 27 v4 M16 30 h3.5 M16 28 h2.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/>
       </svg>
     </span>
-    <span class="brand-text">Charter Key<em data-i18n="brand.tagline">чартер и карта Гёчека</em></span>
+    <span class="brand-text">Charter Key<em>race crew · Göcek, Türkiye</em></span>
   </a>
 
   <nav class="nav" id="nav">
-    <a href="#map" data-nav data-i18n="nav.map">Карта</a>
-    <a href="#collections" data-nav data-i18n="nav.collections">Подборки</a>
-    <a href="#regattas" data-nav data-i18n="nav.regattas">Регаты</a>
-    <a href="#guide" data-nav data-i18n="nav.ai">ИИ-помощь</a>
-    <a href="#profile" data-nav data-i18n="nav.profile">Профиль</a>
+    <a href="#berths" data-nav>Berths</a>
+    <a href="#calendar" data-nav>Calendar</a>
+    <a href="#academy" data-nav>Academy</a>
+    <a href="#map" data-nav>The town</a>
+    <a href="#ai" data-nav>AI help</a>
+    <a href="#account" data-nav>Account</a>
   </nav>
 
   <div class="topbar-right">
-    <div class="lang" role="group" aria-label="Language">
-      <button data-lang="ru" type="button">RU</button>
-      <button data-lang="en" type="button">EN</button>
-    </div>
     <button class="pts-chip" id="ptsChip" type="button">
       <span class="pts-dot" aria-hidden="true"></span>
-      <b id="ptsChipValue">0</b><span class="pts-unit" id="ptsChipUnit">очков</span>
+      <b id="ptsChipValue">0</b><span class="pts-unit">points</span>
     </button>
-    <button class="btn btn-primary btn-sm" data-auth type="button" id="authBtn">Регистрация</button>
+    <button class="btn btn-primary btn-sm" data-auth type="button" id="authBtn">Sign up</button>
     <button class="burger" id="burger" type="button" aria-label="Menu"><span></span><span></span><span></span></button>
   </div>
 </header>
@@ -55,49 +52,121 @@
     <div class="hero-glow" aria-hidden="true"></div>
     <div class="wrap hero-inner">
       <div class="hero-copy">
-        <span class="eyebrow"><i class="live-dot"></i><span id="eyebrow"></span></span>
-        <h1><span data-i18n="hero.h1a">Ключ от недели на воде.</span><br><span class="grad" data-i18n="hero.h1b">Лодка, город и всё между ними.</span></h1>
-        <p class="lede" data-i18n="hero.lede"></p>
+        <span class="eyebrow"><i class="live-dot"></i>Göcek, Türkiye · season 2027 · <span id="eyebrowSpots">15</span> berths left</span>
+        <h1>Race a 36-foot offshore boat.<br><span class="grad">No experience required on day one.</span></h1>
+        <p class="lede">You fly into Dalaman on Saturday. By Wednesday you are trimming a spinnaker in 20 knots and arguing about the start line over dinner. We put you on a properly prepared race boat with a coach beside you, sort the logistics, and hand you the town on a map — so the only hard thing about the week is the racing.</p>
         <div class="hero-cta">
-          <button class="btn btn-primary" data-auth type="button" id="heroSignup"></button>
-          <button class="btn btn-ghost" data-scroll="#map" type="button"><span data-i18n="hero.ctaMap">Открыть карту</span><span class="kbd">↵</span></button>
+          <button class="btn btn-primary" data-scroll="#quiz" type="button">Find my berth <span class="kbd">60 sec</span></button>
+          <button class="btn btn-ghost" data-scroll="#calendar" type="button">See the calendar</button>
         </div>
         <ul class="hero-stats">
-          <li><b id="statPlaces">12</b><span data-i18n="hero.statPlaces">мест на карте</span></li>
-          <li><b id="statRegattas">3</b><span data-i18n="hero.statRegattas">регаты в сезоне</span></li>
-          <li><b id="statCheckins">0</b><span data-i18n="hero.statCheckins">ваших чек-инов</span></li>
+          <li><b>3</b><span>crew tiers</span></li>
+          <li><b id="statEvents">4</b><span>events in 2027</span></li>
+          <li><b id="statCheckins">0</b><span>your check-ins</span></li>
         </ul>
       </div>
 
       <aside class="hero-card">
         <div class="hc-head">
-          <span class="hc-label" data-i18n="hc.label">Ближайшая регата</span>
+          <span class="hc-label">Next event</span>
           <span class="hc-badge" id="hcBadge"></span>
         </div>
         <h3 id="hcName"></h3>
-        <p class="hc-sub" id="hcCity"></p>
+        <p class="hc-sub" id="hcLine"></p>
         <div class="hc-rows">
-          <div><span data-i18n="hc.wind">Ветер</span><b id="hcWind"></b></div>
-          <div><span data-i18n="hc.water">Вода</span><b id="hcWater"></b></div>
-          <div><span data-i18n="hc.fleet">Флот</span><b id="hcFleet"></b></div>
+          <div><span>Fleet</span><b id="hcFleet"></b></div>
+          <div><span>Wind</span><b id="hcWind"></b></div>
+          <div><span>Berths left</span><b id="hcSpots"></b></div>
         </div>
         <div class="hc-foot">
           <button class="btn btn-soft btn-sm" id="hcJoin" type="button"></button>
-          <button class="btn btn-link btn-sm" data-scroll="#regattas" type="button" data-i18n="hc.calendar">Весь календарь</button>
+          <button class="btn btn-link btn-sm" data-scroll="#calendar" type="button">Full calendar</button>
         </div>
       </aside>
     </div>
   </section>
 
-  <!-- ══ КАРТА ══ -->
+  <!-- ══ BERTHS / TIERS ══ -->
+  <section class="section" id="berths">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="sec-kicker">Berths</span>
+          <h2>Same boat, three ways to sail her</h2>
+        </div>
+        <p class="sec-note">Every tier races the full event. What changes is how much of the boat is yours: the rail, one position, or the wheel.</p>
+      </div>
+      <div class="tier-grid" id="tierGrid"></div>
+
+      <div class="magnet" id="magnet">
+        <div>
+          <span class="sec-kicker">Free</span>
+          <h3 id="magnetTitle"></h3>
+          <p class="muted" id="magnetSub"></p>
+          <ul class="magnet-list" id="magnetList"></ul>
+        </div>
+        <div class="magnet-cta">
+          <button class="btn btn-primary" data-auth type="button" id="magnetBtn"></button>
+          <p class="muted" id="magnetNote"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ QUIZ ══ -->
+  <section class="section section-alt" id="quiz">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="sec-kicker">Crew match</span>
+          <h2>Which berth is actually yours</h2>
+        </div>
+        <p class="sec-note">Three questions. The wrong tier is the most common way to have a bad week — too easy and you are bored, too hard and you spend six days apologising.</p>
+      </div>
+      <div class="quiz" id="quizBox"></div>
+    </div>
+  </section>
+
+  <!-- ══ CALENDAR ══ -->
+  <section class="section" id="calendar">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="sec-kicker">Calendar 2027</span>
+          <h2>Four events, one boat</h2>
+        </div>
+        <p class="sec-note">Hold a berth and it is yours for 48 hours before we release it. Members see every event two days before everyone else.</p>
+      </div>
+      <div class="reg-grid" id="regGrid"></div>
+    </div>
+  </section>
+
+  <!-- ══ ACADEMY + CLUB ══ -->
+  <section class="section section-alt" id="academy">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="sec-kicker">Academy</span>
+          <h2>Learn it before you step aboard</h2>
+        </div>
+        <p class="sec-note">Filmed on the boat, not on a whiteboard. Crew who arrive having done the theory spend day one racing instead of catching up.</p>
+      </div>
+      <div class="academy-layout">
+        <div class="course-grid" id="courseGrid"></div>
+        <aside class="club-card" id="clubCard"></aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ THE TOWN / MAP ══ -->
   <section class="section" id="map">
     <div class="wrap">
       <div class="sec-head">
         <div>
-          <span class="sec-kicker" id="mapKicker"></span>
-          <h2 data-i18n="map.h2">Что поделать, что поесть, что увидеть</h2>
+          <span class="sec-kicker">The town · Göcek</span>
+          <h2>What to do when you are not racing</h2>
         </div>
-        <p class="sec-note" data-i18n="map.note"></p>
+        <p class="sec-note">Twelve places picked by hand: price, opening hours and the tip a local would give you. Every check-in adds points to your account.</p>
       </div>
 
       <div class="city-meta" id="cityMeta"></div>
@@ -106,7 +175,7 @@
         <div class="map-side">
           <div class="search-box">
             <span aria-hidden="true">⌕</span>
-            <input type="search" id="searchInput" data-i18n-ph="map.search" aria-label="Search">
+            <input type="search" id="searchInput" placeholder="Fish, sunset, SUP, sail repair…" aria-label="Search places">
           </div>
           <div class="filters" id="filters" role="group"></div>
           <div class="poi-list" id="poiList"></div>
@@ -114,57 +183,30 @@
 
         <div class="map-stage">
           <div class="map-canvas" id="mapCanvas">
-            <svg class="map-svg" id="mapSvg" role="img" aria-label="Map"></svg>
+            <svg class="map-svg" id="mapSvg" role="img" aria-label="Map of the gulf"></svg>
             <div class="pins" id="pins"></div>
             <div class="map-legend" id="mapLegend"></div>
             <div class="compass" aria-hidden="true">
               <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="currentColor" stroke-opacity=".35"/><path d="M30 8 L35 30 L30 26 L25 30 Z" fill="currentColor"/><path d="M30 52 L25 30 L30 34 L35 30 Z" fill="currentColor" opacity=".35"/><text x="30" y="7" text-anchor="middle" font-size="8" fill="currentColor">N</text></svg>
             </div>
           </div>
-
           <div class="poi-detail" id="poiDetail" hidden></div>
         </div>
       </div>
-    </div>
-  </section>
 
-  <!-- ══ ПОДБОРКИ ══ -->
-  <section class="section section-alt" id="collections">
-    <div class="wrap">
-      <div class="sec-head">
-        <div>
-          <span class="sec-kicker" data-i18n="coll.kicker">Подборки</span>
-          <h2 data-i18n="coll.h2">Чем себя занять — по ситуации</h2>
-        </div>
-        <p class="sec-note" data-i18n="coll.note"></p>
-      </div>
       <div class="coll-grid" id="collGrid"></div>
     </div>
   </section>
 
-  <!-- ══ РЕГАТЫ ══ -->
-  <section class="section" id="regattas">
+  <!-- ══ TWO AIs ══ -->
+  <section class="section section-alt" id="ai">
     <div class="wrap">
       <div class="sec-head">
         <div>
-          <span class="sec-kicker" data-i18n="reg.kicker">Календарь</span>
-          <h2 data-i18n="reg.h2">Регаты сезона</h2>
+          <span class="sec-kicker">Two assistants</span>
+          <h2>One for the boat, one for the shore</h2>
         </div>
-        <p class="sec-note" data-i18n="reg.note"></p>
-      </div>
-      <div class="reg-grid" id="regGrid"></div>
-    </div>
-  </section>
-
-  <!-- ══ ДВА ИИ ══ -->
-  <section class="section section-alt" id="guide">
-    <div class="wrap">
-      <div class="sec-head">
-        <div>
-          <span class="sec-kicker" data-i18n="ai.kicker">Два ИИ</span>
-          <h2 data-i18n="ai.h2">Ассистент по чартеру и гид по городу</h2>
-        </div>
-        <p class="sec-note" data-i18n="ai.note"></p>
+        <p class="sec-note">The crew assistant answers what you would otherwise email us at midnight: tiers, kit, safety, flights, money. The town guide handles everything ashore.</p>
       </div>
 
       <div class="guide-layout">
@@ -172,19 +214,19 @@
           <div class="chat-tabs" role="tablist">
             <button class="chat-tab" data-mode="assistant" role="tab" aria-selected="true" type="button">
               <span class="ct-ico" aria-hidden="true">🔑</span>
-              <span><b data-i18n="ai.tabAssistant">Ассистент Charter Key</b><em data-i18n="ai.tabAssistantSub"></em></span>
+              <span><b>Crew assistant</b><em>berths, kit, safety, logistics</em></span>
             </button>
             <button class="chat-tab" data-mode="guide" role="tab" aria-selected="false" type="button">
               <span class="ct-ico" aria-hidden="true">🧭</span>
-              <span><b data-i18n="ai.tabGuide">Гид по городу</b><em id="tabGuideSub"></em></span>
+              <span><b>Town guide</b><em>Göcek · places, food, routes</em></span>
             </button>
-            <button class="btn btn-link btn-sm" id="chatReset" type="button" data-i18n="ai.clear">Очистить</button>
+            <button class="btn btn-link btn-sm" id="chatReset" type="button">Clear</button>
           </div>
           <div class="chat-log" id="chatLog" aria-live="polite"></div>
           <div class="chat-chips" id="chatChips"></div>
           <form class="chat-input" id="chatForm">
-            <input id="chatInput" type="text" autocomplete="off" data-i18n-ph="ai.placeholder" aria-label="Question">
-            <button class="btn btn-primary btn-sm" type="submit" data-i18n="ai.send">Спросить</button>
+            <input id="chatInput" type="text" autocomplete="off" placeholder="For example: I have never raced — which tier?" aria-label="Your question">
+            <button class="btn btn-primary btn-sm" type="submit">Ask</button>
           </form>
         </div>
 
@@ -194,34 +236,46 @@
             <ul class="ga-list" id="gaList"></ul>
           </div>
           <div class="card ga-facts">
-            <h3 data-i18n="ai.cityNow">Город сейчас</h3>
-            <div class="ga-row"><span data-i18n="ai.season">Сезон</span><b id="gaSeason"></b></div>
-            <div class="ga-row"><span data-i18n="ai.wind">Ветер</span><b id="gaWind"></b></div>
-            <div class="ga-row"><span data-i18n="ai.water">Вода</span><b id="gaWater"></b></div>
-            <div class="ga-row"><span data-i18n="ai.regatta">Регата</span><b id="gaRegatta"></b></div>
+            <h3>The boat</h3>
+            <div class="ga-row"><span>Class</span><b id="boatType"></b></div>
+            <div id="boatSpecs"></div>
           </div>
         </aside>
       </div>
     </div>
   </section>
 
-  <!-- ══ ПРОФИЛЬ ══ -->
-  <section class="section" id="profile">
+  <!-- ══ FAQ ══ -->
+  <section class="section" id="faq">
     <div class="wrap">
       <div class="sec-head">
         <div>
-          <span class="sec-kicker" data-i18n="profile.kicker">Профиль</span>
-          <h2 data-i18n="profile.h2">Ваш аккаунт Charter Key</h2>
+          <span class="sec-kicker">Before you book</span>
+          <h2>The questions everyone asks</h2>
         </div>
-        <p class="sec-note" data-i18n="profile.note"></p>
+        <p class="sec-note">If your question is not here, the crew assistant above has the same answers and a few hundred more.</p>
+      </div>
+      <div class="faq" id="faqList"></div>
+    </div>
+  </section>
+
+  <!-- ══ ACCOUNT ══ -->
+  <section class="section section-alt" id="account">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="sec-kicker">Account</span>
+          <h2>Your crew account</h2>
+        </div>
+        <p class="sec-note">Points from events, check-ins and friends you bring in. They convert into helm hours, courses and tier upgrades — not into a plastic loyalty card.</p>
       </div>
 
       <div class="auth-gate" id="authGate" hidden>
         <div>
-          <b data-i18n="gate.title"></b>
-          <p class="muted" id="gateText"></p>
+          <b>You are browsing as a guest.</b>
+          <p class="muted">The map, both assistants and the quiz work in full. But check-ins are not saved, points do not accumulate and the prep checklist stays locked. Signing up takes a minute and gives you 300 points.</p>
         </div>
-        <button class="btn btn-primary" data-auth type="button" id="gateCta"></button>
+        <button class="btn btn-primary" data-auth type="button">Create an account · +300 points</button>
       </div>
 
       <div class="profile-grid">
@@ -229,10 +283,10 @@
           <div class="pf-top">
             <div class="avatar" id="avatar">?</div>
             <div class="pf-id">
-              <input class="pf-name" id="pfName" value="" aria-label="Name" maxlength="28">
+              <input class="pf-name" id="pfName" value="" aria-label="Your name" maxlength="28">
               <span class="pf-role" id="pfRole"></span>
             </div>
-            <div class="pf-pts"><b id="pfPts">0</b><span id="pfPtsLabel">очков</span></div>
+            <div class="pf-pts"><b id="pfPts">0</b><span>points</span></div>
           </div>
 
           <div class="level">
@@ -242,37 +296,37 @@
           </div>
 
           <div class="pf-stats">
-            <div><b id="pfCheckins">0</b><span data-i18n="profile.checkins"></span></div>
-            <div><b id="pfRegattas">0</b><span data-i18n="profile.regattas"></span></div>
-            <div><b id="pfRefs">0</b><span data-i18n="profile.friends"></span></div>
-            <div><b id="pfBonuses">0</b><span data-i18n="profile.bonuses"></span></div>
+            <div><b id="pfCheckins">0</b><span>check-ins</span></div>
+            <div><b id="pfEvents">0</b><span>events held</span></div>
+            <div><b id="pfRefs">0</b><span>friends</span></div>
+            <div><b id="pfRewards">0</b><span>rewards</span></div>
           </div>
         </article>
 
         <article class="card ref-card">
-          <h3 data-i18n="ref.title">Рефералы</h3>
-          <p class="muted" id="refText"></p>
+          <h3>Bring your crew</h3>
+          <p class="muted">A friend signs up through your link and books a berth — you get 250 points, they start with 150. Five friends and your next race week is free.</p>
           <div class="ref-link">
             <input id="refLink" readonly aria-label="Referral link">
-            <button class="btn btn-soft btn-sm" id="refCopy" type="button" data-i18n="ref.copy">Скопировать</button>
+            <button class="btn btn-soft btn-sm" id="refCopy" type="button">Copy</button>
           </div>
           <div class="ref-progress">
             <div class="ref-dots" id="refDots"></div>
             <span class="muted" id="refHint"></span>
           </div>
           <ul class="ref-tiers" id="refTiers"></ul>
-          <button class="btn btn-ghost btn-sm" id="refSim" type="button" data-i18n="ref.invite">Пригласить друга (демо)</button>
+          <button class="btn btn-ghost btn-sm" id="refSim" type="button">Invite a friend (demo)</button>
         </article>
 
         <article class="card rewards-card">
-          <h3 data-i18n="rewards.title">Бонусы за очки</h3>
+          <h3>Spend your points</h3>
           <div class="rewards" id="rewards"></div>
         </article>
 
         <article class="card log-card">
-          <h3 data-i18n="log.title">История</h3>
+          <h3>History</h3>
           <ul class="log" id="activityLog"></ul>
-          <button class="btn btn-link btn-sm" id="resetAll" type="button" data-i18n="log.reset">Сбросить прогресс</button>
+          <button class="btn btn-link btn-sm" id="resetAll" type="button">Reset progress</button>
         </article>
       </div>
     </div>
@@ -283,13 +337,14 @@
   <div class="wrap footer-inner">
     <div>
       <b>Charter Key</b>
-      <p class="muted" data-i18n="footer.text"></p>
+      <p class="muted">Demo project: crew berths on an offshore race boat in Göcek, a city map, two AI assistants and an account with points, rewards and referrals. Prices, availability and venue names are illustrative; the account is stored locally in your browser.</p>
     </div>
     <nav class="footer-nav">
-      <a href="#map" data-i18n="nav.map">Карта</a>
-      <a href="#regattas" data-i18n="nav.regattas">Регаты</a>
-      <a href="#guide" data-i18n="nav.ai">ИИ-помощь</a>
-      <a href="#profile" data-i18n="nav.profile">Профиль</a>
+      <a href="#berths">Berths</a>
+      <a href="#calendar">Calendar</a>
+      <a href="#academy">Academy</a>
+      <a href="#faq">FAQ</a>
+      <a href="#account">Account</a>
     </nav>
   </div>
 </footer>
@@ -298,36 +353,35 @@
   <div class="modal-backdrop" data-auth-close></div>
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
     <button class="modal-x" data-auth-close type="button" aria-label="Close">✕</button>
-    <span class="sec-kicker" data-i18n="modal.kicker"></span>
-    <h3 id="authTitle" data-i18n="modal.title"></h3>
+    <span class="sec-kicker">Crew account</span>
+    <h3 id="authTitle">Sign up in a minute</h3>
     <ul class="auth-perks">
-      <li id="perk1"></li>
-      <li id="perk2" data-i18n="modal.perk2"></li>
-      <li id="perk3"></li>
+      <li><b>The Offshore Prep Checklist</b>, unlocked immediately</li>
+      <li><b>+300 points</b> on the account — most of the way to your first reward</li>
+      <li>Your own link: a friend signs up, you get 250 points, they get 150</li>
     </ul>
     <form id="authForm" novalidate>
       <label class="field">
-        <span data-i18n="modal.name"></span>
-        <input id="authName" name="name" autocomplete="name" data-i18n-ph="modal.namePh" required>
+        <span>Full name</span>
+        <input id="authName" name="name" autocomplete="name" placeholder="Sam Whitfield" required>
       </label>
       <label class="field">
-        <span data-i18n="modal.email"></span>
-        <input id="authEmail" name="email" type="email" autocomplete="email" data-i18n-ph="modal.emailPh" required>
+        <span>Email</span>
+        <input id="authEmail" name="email" type="email" autocomplete="email" placeholder="sam@example.com" required>
       </label>
       <label class="field">
-        <span><span data-i18n="modal.promo"></span> <i data-i18n="modal.promoOpt"></i></span>
-        <input id="authPromo" name="promo" data-i18n-ph="modal.promoPh">
+        <span>Friend's code <i>optional</i></span>
+        <input id="authPromo" name="promo" placeholder="CK-SAM-2631">
       </label>
       <p class="auth-error" id="authError" hidden></p>
-      <button class="btn btn-primary" type="submit" id="authSubmit"></button>
-      <p class="auth-note" data-i18n="modal.note"></p>
+      <button class="btn btn-primary" type="submit">Create account · +300 points</button>
+      <p class="auth-note">Demo version: the account stays in this browser, nothing is sent anywhere.</p>
     </form>
   </div>
 </div>
 
 <div class="toast-wrap" id="toasts" aria-live="polite"></div>
 
-<script src="assets/js/i18n.js"></script>
 <script src="assets/js/data.js"></script>
 <script src="assets/js/map.js"></script>
 <script src="assets/js/guide.js"></script>

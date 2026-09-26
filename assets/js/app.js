@@ -1,4 +1,4 @@
-/* Charter Key — состояние, аккаунт, карта, очки, два ИИ, переключение языка */
+/* Charter Key — state, account, offer sections, map, two assistants */
 
 (() => {
   'use strict';
@@ -6,12 +6,13 @@
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const KEY = 'charterkey.v1';
+  const money = n => '$' + n.toLocaleString('en-US');
+  const KEY = 'charterkey.v2';
 
-  /* ────────── состояние ────────── */
   const DEFAULT = {
     registered: false, name: '', email: '', refCode: '', invitedBy: '',
-    points: 0, checkins: [], regattas: [], referrals: 0, claimed: [], log: []
+    points: 0, checkins: [], events: [], referrals: 0, claimed: [], courses: [],
+    club: false, tier: '', log: []
   };
 
   let state = load();
@@ -24,12 +25,12 @@
   }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
 
-  const dest = () => DESTINATIONS[0];
-  const pointById = id => dest().points.find(p => p.id === id);
+  const D = DESTINATION;
+  const pointById = id => D.points.find(p => p.id === id);
   const levelOf = pts => [...LEVELS].reverse().find(l => pts >= l.from) || LEVELS[0];
   const nextLevel = pts => LEVELS.find(l => l.from > pts) || null;
-  const guestName = () => Lang.get() === 'en' ? 'Guest' : 'Гость';
-  const displayName = () => state.registered ? state.name : guestName();
+  const displayName = () => state.registered ? state.name : 'Guest';
+  const spotsLeft = r => Math.max(0, r.spots - (state.events.includes(r.id) ? 1 : 0));
 
   const catStyle = cat => {
     const c = CAT_META[cat].color;
@@ -41,16 +42,16 @@
   }
   const catIcon = cat => CATEGORIES.find(c => c.id === cat).icon;
 
-  /* ────────── очки, журнал, тосты ────────── */
-  function addPoints(n, logKey, vars) {
+  /* ────────── points, log, toasts ────────── */
+  function addPoints(n, label) {
     state.points += n;
-    state.log.unshift({ t: Date.now(), key: logKey, vars: vars || {}, n });
+    state.log.unshift({ t: Date.now(), label, n });
     state.log = state.log.slice(0, 40);
     save();
     renderProfile();
     const chip = $('#ptsChip');
     chip.classList.remove('bump'); void chip.offsetWidth; chip.classList.add('bump');
-    toast(t('toast.points', { n, label: t('logLabel.' + logKey, vars) }));
+    toast(`<b>+${n}</b> points · ${esc(label)}`);
   }
 
   function toast(html) {
@@ -61,29 +62,27 @@
     setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 320); }, 3400);
   }
 
-  /* ────────── аккаунт ────────── */
+  /* ────────── account ────────── */
   function openAuth(reason) {
-    if (state.registered) { $('#profile').scrollIntoView({ behavior: 'smooth' }); return; }
+    if (state.registered) { $('#account').scrollIntoView({ behavior: 'smooth' }); return; }
     $('#authError').hidden = true;
     $('#authModal').hidden = false;
     document.body.style.overflow = 'hidden';
     if (reason) toast(reason);
     setTimeout(() => $('#authName').focus(), 60);
   }
-  function closeAuth() {
-    $('#authModal').hidden = true;
-    document.body.style.overflow = '';
-  }
-  function requireAuth(reasonKey) {
+  const closeAuth = () => { $('#authModal').hidden = true; document.body.style.overflow = ''; };
+
+  function requireAuth(reason) {
     if (state.registered) return true;
-    openAuth(t('toast.' + reasonKey));
+    openAuth(reason);
     return false;
   }
 
   function register(name, email, promo) {
     const err = $('#authError');
-    if (name.trim().length < 2) { err.textContent = t('modal.errName'); err.hidden = false; return; }
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email.trim())) { err.textContent = t('modal.errEmail'); err.hidden = false; return; }
+    if (name.trim().length < 2) { err.textContent = 'Add your name — it goes on the crew list.'; err.hidden = false; return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email.trim())) { err.textContent = 'Check the email: it should look like name@domain.com'; err.hidden = false; return; }
 
     state.registered = true;
     state.name = name.trim();
@@ -93,66 +92,250 @@
     save();
     closeAuth();
 
-    addPoints(BONUS.signup, 'signup');
-    if (state.invitedBy) addPoints(BONUS.invitee, 'promo', { code: state.invitedBy });
+    addPoints(BONUS.signup, 'Signed up');
+    if (state.invitedBy) addPoints(BONUS.invitee, `Friend's code ${state.invitedBy}`);
     renderAll();
-    $('#profile').scrollIntoView({ behavior: 'smooth' });
+    $('#magnet').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   function makeCode(name) {
-    const map = { А:'A',Б:'B',В:'V',Г:'G',Д:'D',Е:'E',Ж:'ZH',З:'Z',И:'I',Й:'Y',К:'K',Л:'L',М:'M',Н:'N',О:'O',П:'P',Р:'R',С:'S',Т:'T',У:'U',Ф:'F',Х:'H',Ц:'C',Ч:'CH',Ш:'SH',Щ:'SCH',Ы:'Y',Э:'E',Ю:'YU',Я:'YA',Ь:'',Ъ:'' };
-    const first = name.trim().split(/\s+/)[0] || 'CREW';
-    const lat = [...first.toUpperCase()].map(c => map[c] ?? c).join('').replace(/[^A-Z]/g, '').slice(0, 10) || 'CREW';
-    return `CK-${lat}-${1000 + Math.floor(Math.random() * 8999)}`;
+    const first = (name.trim().split(/\s+/)[0] || 'CREW').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 10) || 'CREW';
+    return `CK-${first}-${1000 + Math.floor(Math.random() * 8999)}`;
   }
 
-  /* ────────── карта ────────── */
+  /* ────────── berth tiers ────────── */
+  function renderTiers() {
+    $('#tierGrid').innerHTML = TIERS.map(t => `
+      <article class="tier ${t.featured ? 'featured' : ''} ${state.tier === t.id ? 'chosen' : ''}">
+        ${t.featured ? '<span class="tier-flag">Most crews pick this</span>' : ''}
+        <span class="tier-tag">${esc(t.tag)}</span>
+        <h3>${esc(t.name)}</h3>
+        <div class="tier-price"><b>${money(t.price)}</b><span>${esc(t.unit)}</span></div>
+        <p class="tier-line">${esc(t.line)}</p>
+        <ul class="tier-list">${t.includes.map(i => `<li>${esc(i)}</li>`).join('')}</ul>
+        <div class="tier-foot">
+          <button class="btn ${t.featured ? 'btn-primary' : 'btn-ghost'} btn-sm" data-tier="${t.id}" type="button">
+            ${state.tier === t.id ? '✓ Your tier' : 'Choose ' + esc(t.name)}
+          </button>
+          <span class="tier-spots ${t.spots <= 2 ? 'low' : ''}">${t.spots} left this season</span>
+        </div>
+      </article>`).join('');
+  }
+
+  function chooseTier(id) {
+    state.tier = id;
+    save();
+    renderTiers();
+    const t = TIERS.find(x => x.id === id);
+    toast(`<b>${esc(t.name)}</b> selected · pick your event below`);
+    $('#calendar').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  /* ────────── lead magnet ────────── */
+  function renderMagnet() {
+    $('#magnetTitle').textContent = LEAD_MAGNET.title;
+    $('#magnetSub').textContent = LEAD_MAGNET.sub;
+    $('#magnetList').innerHTML = LEAD_MAGNET.items
+      .map(i => `<li>${state.registered ? '✓ ' : ''}${esc(i)}</li>`).join('');
+    $('#magnet').classList.toggle('unlocked', state.registered);
+    $('#magnetBtn').textContent = state.registered ? 'Open the checklist' : 'Unlock it free';
+    $('#magnetBtn').toggleAttribute('data-auth', !state.registered);
+    $('#magnetNote').textContent = state.registered
+      ? 'Unlocked on your account. We email the printable version before your first event.'
+      : 'Free with an account. No card, no call, one minute.';
+  }
+
+  /* ────────── quiz ────────── */
+  let quizStep = 0;
+  let quizScore = { rail: 0, trim: 0, helm: 0 };
+
+  function renderQuiz() {
+    const box = $('#quizBox');
+
+    if (quizStep >= QUIZ.length) {
+      const best = Object.entries(quizScore).sort((a, b) => b[1] - a[1])[0][0];
+      const t = TIERS.find(x => x.id === best);
+      box.innerHTML = `
+        <div class="quiz-result">
+          <span class="sec-kicker">Your match</span>
+          <h3>${esc(t.name)} — ${money(t.price)} <span class="muted">${esc(t.unit)}</span></h3>
+          <p class="quiz-why">${esc(t.line)}</p>
+          <ul class="tier-list">${t.includes.slice(0, 4).map(i => `<li>${esc(i)}</li>`).join('')}</ul>
+          <div class="quiz-actions">
+            <button class="btn btn-primary" data-tier="${t.id}" type="button">Take the ${esc(t.name)} berth</button>
+            <button class="btn btn-ghost btn-sm" data-quiz-restart type="button">Start again</button>
+            <button class="btn btn-link btn-sm" data-ask-tier="${t.id}" type="button">Ask the assistant why</button>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const q = QUIZ[quizStep];
+    box.innerHTML = `
+      <div class="quiz-card">
+        <div class="quiz-progress">
+          ${QUIZ.map((_, i) => `<i class="${i <= quizStep ? 'on' : ''}"></i>`).join('')}
+          <span>Question ${quizStep + 1} of ${QUIZ.length}</span>
+        </div>
+        <h3>${esc(q.q)}</h3>
+        <div class="quiz-options">
+          ${q.options.map(o => `<button class="quiz-option" data-answer="${o.id}" type="button">${esc(o.label)}</button>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  function answerQuiz(optionId) {
+    const q = QUIZ[quizStep];
+    const o = q.options.find(x => x.id === optionId);
+    if (!o) return;
+    Object.entries(o.score).forEach(([k, v]) => { quizScore[k] += v; });
+    quizStep++;
+    renderQuiz();
+  }
+
+  function restartQuiz() {
+    quizStep = 0;
+    quizScore = { rail: 0, trim: 0, helm: 0 };
+    renderQuiz();
+  }
+
+  /* ────────── calendar ────────── */
+  function renderEvents() {
+    $('#regGrid').innerHTML = REGATTAS.map(r => {
+      const held = state.events.includes(r.id);
+      const left = spotsLeft(r);
+      return `
+        <article class="reg ${held ? 'joined' : ''}">
+          <div class="reg-top">
+            <span class="reg-level">${esc(r.level)}</span>
+            <span class="reg-date">${esc(r.date)}</span>
+          </div>
+          <h3>${esc(r.name)}</h3>
+          <p class="reg-line">${esc(r.line)}</p>
+          <div class="reg-rows">
+            <span>Fleet: ${esc(r.fleet)}</span>
+            <span class="${left <= 2 ? 'scarce' : ''}">${left} berth${left === 1 ? '' : 's'} left</span>
+          </div>
+          <div class="reg-foot">
+            <button class="btn ${held ? 'btn-ghost' : 'btn-soft'} btn-sm" data-event="${r.id}" ${held ? 'disabled' : ''} type="button">
+              ${held ? '✓ Berth held' : `Hold a berth · +${r.pts}`}
+            </button>
+            <button class="btn btn-link btn-sm" data-scroll="#berths" type="button">Tiers</button>
+          </div>
+        </article>`;
+    }).join('');
+  }
+
+  function holdEvent(id) {
+    if (!requireAuth('Berths are held on an account — it takes a minute')) return;
+    if (state.events.includes(id)) return;
+    const r = REGATTAS.find(x => x.id === id);
+    state.events.push(id);
+    addPoints(r.pts, `Berth held: ${r.name}`);
+    renderEvents(); renderHero();
+  }
+
+  /* ────────── academy + club ────────── */
+  function renderAcademy() {
+    $('#courseGrid').innerHTML = COURSES.map(c => {
+      const owned = state.courses.includes(c.id);
+      const canPoints = state.registered && state.points >= c.pts;
+      return `
+        <article class="course ${owned ? 'owned' : ''}">
+          <div class="course-top">
+            <span class="course-level">${esc(c.level)}</span>
+            <span class="course-time">${esc(c.time)}</span>
+          </div>
+          <h3>${esc(c.title)}</h3>
+          <p class="course-line">${esc(c.line)}</p>
+          <div class="course-foot">
+            ${owned
+              ? '<span class="course-owned">✓ In your library</span>'
+              : `<button class="btn btn-soft btn-sm" data-buy="${c.id}" type="button">Buy ${money(c.price)}</button>
+                 <button class="btn ${canPoints ? 'btn-ghost' : 'btn-ghost'} btn-sm" data-course-points="${c.id}" type="button">or ${c.pts} points</button>`}
+          </div>
+        </article>`;
+    }).join('');
+
+    $('#clubCard').innerHTML = `
+      <span class="sec-kicker">Membership</span>
+      <h3>The Club</h3>
+      <div class="tier-price"><b>${money(CLUB.price)}</b><span>${esc(CLUB.unit)}</span></div>
+      <p class="muted">or ${money(CLUB.annual)} a year</p>
+      <ul class="tier-list">${CLUB.perks.map(p => `<li>${esc(p)}</li>`).join('')}</ul>
+      <button class="btn ${state.club ? 'btn-ghost' : 'btn-primary'} btn-sm" id="clubBtn" ${state.club ? 'disabled' : ''} type="button">
+        ${state.club ? '✓ Member' : 'Join the club'}
+      </button>`;
+  }
+
+  function buyCourse(id, withPoints) {
+    if (!requireAuth('Courses are attached to an account')) return;
+    const c = COURSES.find(x => x.id === id);
+    if (!c || state.courses.includes(id)) return;
+
+    if (withPoints) {
+      if (state.points < c.pts) {
+        toast(`<b>${c.pts - state.points}</b> points short of “${esc(c.title)}”`);
+        return;
+      }
+      state.points -= c.pts;
+      state.log.unshift({ t: Date.now(), label: `Course: ${c.title}`, n: -c.pts });
+      state.courses.push(id);
+      save(); renderAcademy(); renderProfile();
+      toast(`<b>${esc(c.title)}</b> unlocked with points`);
+      return;
+    }
+    state.courses.push(id);
+    save(); renderAcademy(); renderProfile();
+    toast(`Demo checkout: <b>${esc(c.title)}</b> added to your library`);
+  }
+
+  function joinClub() {
+    if (!requireAuth('Membership sits on an account')) return;
+    if (state.club) return;
+    state.club = true;
+    save(); renderAcademy();
+    toast('Demo checkout: you are in the Club — 48h early access is on');
+  }
+
+  /* ────────── town map ────────── */
   let filter = 'all', query = '', activePoi = null;
 
-  const visiblePoints = () => dest().points.filter(p => {
+  const visiblePoints = () => D.points.filter(p => {
     const okCat = filter === 'all' || p.cat === filter;
     const q = query.trim().toLowerCase();
-    const hay = (T(p.name) + ' ' + T(p.desc) + ' ' + p.tags.join(' ') + ' ' + (p.tagsEn || []).join(' ')).toLowerCase();
+    const hay = (p.name + ' ' + p.desc + ' ' + p.tags.join(' ')).toLowerCase();
     return okCat && (!q || hay.includes(q));
   });
 
   function renderCity() {
-    const d = dest();
     $('#cityMeta').innerHTML = `
-      <span>${t('map.metaCity')}: <b>${esc(T(d.city))}, ${esc(T(d.region))}</b></span>
-      <span>${t('map.metaSeason')}: <b>${esc(T(d.season))}</b></span>
-      <span>${t('map.metaWind')}: <b>${esc(T(d.wind))}</b></span>
-      <span>${t('map.metaWater')}: <b>${esc(T(d.water))}</b></span>
-      <span>${t('map.metaPlaces')}: <b>${d.points.length}</b></span>`;
-    $('#mapKicker').textContent = t('map.kicker', { city: T(d.city) });
-    $('#eyebrow').textContent = t('hero.eyebrow', { city: T(d.city), n: d.points.length });
-    $('#tabGuideSub').textContent = t('ai.tabGuideSub', { city: T(d.city) });
-    $('#gaSeason').textContent = T(d.season);
-    $('#gaWind').textContent = T(d.wind);
-    $('#gaWater').textContent = T(d.water);
-    $('#gaRegatta').textContent = T(d.regatta);
-    $('#statPlaces').textContent = d.points.length;
-    $('#statRegattas').textContent = REGATTAS.length;
+      <span>Season: <b>${esc(D.season)}</b></span>
+      <span>Wind: <b>${esc(D.wind)}</b></span>
+      <span>Water: <b>${esc(D.water)}</b></span>
+      <span>Airport: <b>${esc(D.airport)}</b></span>
+      <span>Places: <b>${D.points.length}</b></span>`;
   }
 
   function renderFilters() {
     $('#filters').innerHTML = CATEGORIES.map(c => `
-      <button class="filter" data-cat="${c.id}" aria-pressed="${filter === c.id}">
-        ${c.icon} ${esc(T(c.label))}
-      </button>`).join('');
+      <button class="filter" data-cat="${c.id}" aria-pressed="${filter === c.id}">${c.icon} ${esc(c.label)}</button>`).join('');
   }
 
   function renderList() {
     const list = visiblePoints();
     const box = $('#poiList');
-    if (!list.length) { box.innerHTML = `<div class="poi-empty">${esc(t('map.empty'))}</div>`; return; }
+    if (!list.length) {
+      box.innerHTML = `<div class="poi-empty">Nothing found. Try “fish”, “sunset”, “SUP” or clear the filter.</div>`;
+      return;
+    }
     box.innerHTML = list.map(p => `
       <button class="poi-item ${activePoi === p.id ? 'active' : ''} ${state.checkins.includes(p.id) ? 'done' : ''}"
               data-poi="${p.id}" style="${catStyle(p.cat)}">
         <span class="poi-ico">${catIcon(p.cat)}</span>
         <span>
-          <span class="poi-name">${esc(T(p.name))}</span><br>
-          <span class="poi-sub">${esc(T(CAT_META[p.cat].label))} · ${esc(T(p.price))}</span>
+          <span class="poi-name">${esc(p.name)}</span><br>
+          <span class="poi-sub">${esc(CAT_META[p.cat].label)} · ${esc(p.price)}</span>
         </span>
         <span class="poi-pts">+${p.pts}</span>
       </button>`).join('');
@@ -160,18 +343,18 @@
 
   function renderPins() {
     const vis = new Set(visiblePoints().map(p => p.id));
-    $('#pins').innerHTML = dest().points.map(p => `
+    $('#pins').innerHTML = D.points.map(p => `
       <button class="pin ${vis.has(p.id) ? '' : 'dim'} ${activePoi === p.id ? 'active' : ''} ${state.checkins.includes(p.id) ? 'done' : ''}"
-              data-poi="${p.id}" style="left:${p.x}%;top:${p.y}%;${catStyle(p.cat)}" title="${esc(T(p.name))}">
+              data-poi="${p.id}" style="left:${p.x}%;top:${p.y}%;${catStyle(p.cat)}" title="${esc(p.name)}">
         <span class="pin-body">
           <span class="pin-dot">${catIcon(p.cat)}</span>
-          <span class="pin-label">${esc(T(p.name))}</span>
+          <span class="pin-label">${esc(p.name)}</span>
         </span>
         <span class="pin-stem"></span>
       </button>`).join('');
 
     $('#mapLegend').innerHTML = Object.values(CAT_META)
-      .map(v => `<span class="lg"><i style="background:${v.color}"></i>${esc(T(v.label))}</span>`).join('');
+      .map(v => `<span class="lg"><i style="background:${v.color}"></i>${esc(v.label)}</span>`).join('');
   }
 
   function renderDetail() {
@@ -179,31 +362,30 @@
     const p = activePoi ? pointById(activePoi) : null;
     if (!p) { box.hidden = true; box.innerHTML = ''; return; }
     const done = state.checkins.includes(p.id);
-    const tags = (Lang.get() === 'en' ? (p.tagsEn || p.tags) : p.tags).slice(0, 7);
     box.hidden = false;
     box.style.cssText = catStyle(p.cat);
     box.innerHTML = `
       <div class="pd-top">
         <div>
-          <span class="pd-cat">${catIcon(p.cat)} ${esc(T(CAT_META[p.cat].label))}</span>
-          <h3 class="pd-title">${esc(T(p.name))}</h3>
-          <p class="pd-desc">${esc(T(p.desc))}</p>
+          <span class="pd-cat">${catIcon(p.cat)} ${esc(CAT_META[p.cat].label)}</span>
+          <h3 class="pd-title">${esc(p.name)}</h3>
+          <p class="pd-desc">${esc(p.desc)}</p>
         </div>
-        <button class="btn btn-link btn-sm" data-close-detail type="button">${esc(t('poi.close'))}</button>
+        <button class="btn btn-link btn-sm" data-close-detail type="button">Close ✕</button>
       </div>
       <div class="pd-meta">
-        <div><span>${t('poi.price')}</span><b>${esc(T(p.price))}</b></div>
-        <div><span>${t('poi.hours')}</span><b>${esc(T(p.time))}</b></div>
-        <div><span>${t('poi.perCheckin')}</span><b>${t('poi.pts', { n: p.pts })}</b></div>
+        <div><span>Price</span><b>${esc(p.price)}</b></div>
+        <div><span>Hours</span><b>${esc(p.time)}</b></div>
+        <div><span>Check-in</span><b>+${p.pts} points</b></div>
       </div>
-      <div class="pd-tip"><b>${t('poi.tip')}</b> ${esc(T(p.tip))}</div>
+      <div class="pd-tip"><b>Tip:</b> ${esc(p.tip)}</div>
       <div class="pd-actions">
         <button class="btn ${done ? 'btn-ghost' : 'btn-primary'}" data-checkin="${p.id}" ${done ? 'disabled' : ''} type="button">
-          ${done ? esc(t('poi.done')) : esc(t('poi.checkin', { n: p.pts }))}
+          ${done ? '✓ Checked in' : `Check in · +${p.pts} points`}
         </button>
-        <button class="btn btn-ghost btn-sm" data-ask="${p.id}" type="button">${esc(t('poi.ask'))}</button>
+        <button class="btn btn-ghost btn-sm" data-ask="${p.id}" type="button">Ask the guide about this place</button>
       </div>
-      <div class="pd-tags">${tags.map(x => `<span class="tag">${esc(x)}</span>`).join('')}</div>`;
+      <div class="pd-tags">${p.tags.slice(0, 7).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</div>`;
   }
 
   function selectPoi(id, scroll) {
@@ -213,133 +395,97 @@
   }
 
   function checkin(id) {
-    if (!requireAuth('gateCheckin')) return;
+    if (!requireAuth('Check-ins are saved to an account')) return;
     if (state.checkins.includes(id)) return;
     const p = pointById(id);
     state.checkins.push(id);
-    addPoints(p.pts, 'checkin', { name: T(p.name) });
+    addPoints(p.pts, `Check-in: ${p.name}`);
     renderList(); renderPins(); renderDetail(); renderHero();
   }
 
-  /* ────────── подборки ────────── */
   function renderCollections() {
-    const d = dest();
     $('#collGrid').innerHTML = COLLECTIONS.map(c => {
-      const items = d.points
+      const items = D.points
         .map(p => ({ p, s: p.tags.filter(x => c.match.includes(x)).length }))
         .filter(r => r.s > 0).sort((a, b) => b.s - a.s).slice(0, 3).map(r => r.p);
       if (!items.length) return '';
       return `
         <button class="coll" data-coll="${items[0].id}" type="button">
-          <h3>${esc(T(c.title))}</h3>
-          <span class="coll-sub">${esc(T(c.sub))}</span>
-          <ul class="coll-items">${items.map(p => `<li>${esc(T(p.name))}<span class="muted"> · ${esc(T(p.price))}</span></li>`).join('')}</ul>
-          <div class="coll-more">${esc(t('coll.open'))}</div>
+          <h3>${esc(c.title)}</h3>
+          <span class="coll-sub">${esc(c.sub)}</span>
+          <ul class="coll-items">${items.map(p => `<li>${esc(p.name)}<span class="muted"> · ${esc(p.price)}</span></li>`).join('')}</ul>
+          <div class="coll-more">Show on the map →</div>
         </button>`;
     }).join('');
   }
 
-  /* ────────── регаты ────────── */
-  function renderRegattas() {
-    const d = dest();
-    $('#regGrid').innerHTML = REGATTAS.map(r => {
-      const joined = state.regattas.includes(r.id);
-      return `
-        <article class="reg ${joined ? 'joined' : ''}">
-          <div class="reg-top">
-            <span class="reg-level">${esc(T(r.level))}</span>
-            <span class="reg-date">${esc(T(r.date))}</span>
-          </div>
-          <h3>${esc(T(r.name))}</h3>
-          <span class="reg-city">${esc(T(d.city))} · ${esc(T(d.region))}</span>
-          <div class="reg-rows">
-            <span>${t('reg.fleet')}: ${esc(T(r.fleet))}</span>
-            <span>${esc(T(r.slots))}</span>
-          </div>
-          <div class="reg-foot">
-            <button class="btn ${joined ? 'btn-ghost' : 'btn-soft'} btn-sm" data-reg="${r.id}" ${joined ? 'disabled' : ''} type="button">
-              ${joined ? esc(t('reg.joined')) : esc(t('reg.join', { n: r.pts }))}
-            </button>
-            <button class="btn btn-link btn-sm" data-scroll="#map" type="button">${esc(t('reg.nearby'))}</button>
-          </div>
-        </article>`;
-    }).join('');
-  }
-
-  function joinRegatta(id) {
-    if (!requireAuth('gateRegatta')) return;
-    if (state.regattas.includes(id)) return;
-    const r = REGATTAS.find(x => x.id === id);
-    state.regattas.push(id);
-    addPoints(r.pts, 'regatta', { name: T(r.name) });
-    renderRegattas(); renderHero();
+  /* ────────── FAQ ────────── */
+  function renderFaq() {
+    $('#faqList').innerHTML = FAQ.map((f, i) => `
+      <details class="faq-item" ${i === 0 ? 'open' : ''}>
+        <summary>${esc(f.q)}</summary>
+        <p>${esc(f.a)}</p>
+      </details>`).join('');
   }
 
   /* ────────── hero ────────── */
   function renderHero() {
-    const d = dest(), r = REGATTAS[0];
-    $('#hcName').textContent = T(r.name);
-    $('#hcCity').textContent = `${T(d.city)} · ${T(d.region)}`;
-    $('#hcWind').textContent = T(d.wind);
-    $('#hcWater').textContent = T(d.water);
-    $('#hcFleet').textContent = T(r.fleet);
-    $('#hcBadge').textContent = T(r.date);
-    const joined = state.regattas.includes(r.id);
+    const r = REGATTAS.find(x => !state.events.includes(x.id)) || REGATTAS[0];
+    $('#hcName').textContent = r.name;
+    $('#hcBadge').textContent = r.date;
+    $('#hcLine').textContent = r.line;
+    $('#hcFleet').textContent = r.fleet;
+    $('#hcWind').textContent = D.wind;
+    $('#hcSpots').textContent = `${spotsLeft(r)} of ${r.spots}`;
+    const held = state.events.includes(r.id);
     const btn = $('#hcJoin');
-    btn.textContent = joined ? t('hc.joined') : t('hc.join', { n: r.pts });
-    btn.disabled = joined;
-    btn.dataset.reg = r.id;
+    btn.textContent = held ? '✓ Berth held' : `Hold a berth · +${r.pts} points`;
+    btn.disabled = held;
+    btn.dataset.event = r.id;
+    $('#statEvents').textContent = REGATTAS.length;
     $('#statCheckins').textContent = state.checkins.length;
-    $('#heroSignup').textContent = t('hero.ctaSignup', { n: BONUS.signup });
+    $('#eyebrowSpots').textContent = REGATTAS.reduce((a, x) => a + spotsLeft(x), 0);
   }
 
-  /* ────────── профиль ────────── */
+  /* ────────── account ────────── */
   function renderProfile() {
     const reg = state.registered;
     const lvl = levelOf(state.points);
     const next = nextLevel(state.points);
 
     $('#authGate').hidden = reg;
-    $('#gateText').textContent = t('gate.text', { n: BONUS.signup });
-    $('#gateCta').textContent = t('gate.cta', { n: BONUS.signup });
-    $('#authBtn').textContent = reg ? state.name.split(' ')[0] : t('btn.signup');
-
-    $('#ptsChipValue').textContent = state.points.toLocaleString(Lang.get() === 'en' ? 'en-US' : 'ru-RU');
-    $('#ptsChipUnit').textContent = t('btn.points');
-    $('#pfPts').textContent = state.points.toLocaleString(Lang.get() === 'en' ? 'en-US' : 'ru-RU');
-    $('#pfPtsLabel').textContent = t('profile.points');
-    $('#pfRole').textContent = reg ? `${T(lvl.name)} · ${state.email}` : t('profile.guest');
+    $('#authBtn').textContent = reg ? state.name.split(' ')[0] : 'Sign up';
+    $('#ptsChipValue').textContent = state.points.toLocaleString('en-US');
+    $('#pfPts').textContent = state.points.toLocaleString('en-US');
+    $('#pfRole').textContent = reg ? `${lvl.name} · ${state.email}` : 'Guest · no account';
     $('#pfName').value = displayName();
     $('#pfName').disabled = !reg;
     $('#avatar').textContent = reg
       ? (state.name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'CK')
       : '?';
 
-    $('#lvCur').textContent = T(lvl.name);
-    $('#lvNext').textContent = next
-      ? t('profile.toLevel', { name: T(next.name), n: next.from - state.points })
-      : t('profile.maxLevel');
+    $('#lvCur').textContent = lvl.name;
+    $('#lvNext').textContent = next ? `${next.from - state.points} points to ${next.name}` : 'top level reached';
     const base = lvl.from, top = next ? next.from : lvl.from + 1;
     $('#lvFill').style.width = `${next ? Math.min(100, ((state.points - base) / (top - base)) * 100) : 100}%`;
-    $('#lvTicks').innerHTML = LEVELS.map(l => `<span class="${state.points >= l.from ? 'on' : ''}">${esc(T(l.name))}</span>`).join('');
+    $('#lvTicks').innerHTML = LEVELS.map(l => `<span class="${state.points >= l.from ? 'on' : ''}">${esc(l.name)}</span>`).join('');
 
     $('#pfCheckins').textContent = state.checkins.length;
-    $('#pfRegattas').textContent = state.regattas.length;
+    $('#pfEvents').textContent = state.events.length;
     $('#pfRefs').textContent = state.referrals;
-    $('#pfBonuses').textContent = state.claimed.length;
+    $('#pfRewards').textContent = state.claimed.length + state.courses.length;
 
-    $('#refText').textContent = t('ref.text', { a: BONUS.inviter, b: BONUS.invitee });
-    $('#refLink').value = reg ? `charterkey.app/r/${state.refCode}` : t('ref.placeholder');
+    $('#refLink').value = reg ? `charterkey.com/r/${state.refCode}` : 'Appears once you sign up';
     $('#refCopy').disabled = !reg;
     $('#refSim').disabled = !reg;
     $('#refDots').innerHTML = Array.from({ length: 5 }, (_, i) => `<i class="${i < state.referrals ? 'on' : ''}"></i>`).join('');
     $('#refHint').textContent = state.referrals >= 5
-      ? t('ref.hintFull')
-      : t('ref.hint', { n: state.referrals, word: Lang.plural(state.referrals, t('ref.friendsWord')) });
+      ? 'All five aboard — your next race week is on us.'
+      : `${state.referrals} of 5 invited`;
     $('#refTiers').innerHTML = REF_TIERS.map(x => `
       <li class="${state.referrals >= x.n ? 'on' : ''}">
-        <b>${x.n} ${esc(Lang.plural(x.n, t('ref.tierWord')))}</b>
-        <span>${esc(T(x.title))} — ${esc(T(x.sub))}</span>
+        <b>${x.n} ${x.n === 1 ? 'friend' : 'friends'}</b>
+        <span>${esc(x.title)} — ${esc(x.sub)}</span>
       </li>`).join('');
 
     $('#rewards').innerHTML = REWARDS.map(r => {
@@ -348,51 +494,73 @@
       return `
         <div class="reward ${claimed ? 'claimed' : ''}">
           <div>
-            <div class="rw-title">${esc(T(r.title))}</div>
-            <div class="rw-sub">${esc(T(r.sub))}</div>
-            ${claimed ? `<div class="rw-code">${t('rewards.promo')} ${esc(r.code)}</div>` : ''}
+            <div class="rw-title">${esc(r.title)}</div>
+            <div class="rw-sub">${esc(r.sub)}</div>
+            ${claimed ? `<div class="rw-code">Code: ${esc(r.code)}</div>` : ''}
           </div>
           ${claimed
-            ? `<span class="poi-pts">${esc(t('rewards.claimed'))}</span>`
-            : `<button class="btn ${can ? 'btn-soft' : 'btn-ghost'} btn-sm" data-reward="${r.id}" type="button">${can ? esc(t('rewards.claim')) : esc(t('rewards.cost', { n: r.cost }))}</button>`}
+            ? '<span class="poi-pts">claimed</span>'
+            : `<button class="btn ${can ? 'btn-soft' : 'btn-ghost'} btn-sm" data-reward="${r.id}" type="button">${can ? 'Claim' : r.cost + ' pts'}</button>`}
         </div>`;
     }).join('');
 
-    const locale = Lang.get() === 'en' ? 'en-GB' : 'ru-RU';
     $('#activityLog').innerHTML = state.log.length
-      ? state.log.map(l => `<li>${esc(t('logLabel.' + l.key, l.vars))} <span>${l.n > 0 ? '+' : ''}${l.n} · ${new Date(l.t).toLocaleString(locale, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></li>`).join('')
-      : `<li class="log-empty">${esc(t('log.empty'))}</li>`;
+      ? state.log.map(l => `<li>${esc(l.label)} <span>${l.n > 0 ? '+' : ''}${l.n} · ${new Date(l.t).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></li>`).join('')
+      : '<li class="log-empty">Empty so far. Create an account and hold your first berth.</li>';
   }
 
   function claimReward(id) {
-    if (!requireAuth('gateReward')) return;
+    if (!requireAuth('Rewards are tied to an account')) return;
     const r = REWARDS.find(x => x.id === id);
     if (!r || state.claimed.includes(id)) return;
     if (state.points < r.cost) {
-      toast(t('toast.notEnough', { n: r.cost - state.points, title: esc(T(r.title)) }));
+      toast(`<b>${r.cost - state.points}</b> points short of “${esc(r.title)}”`);
       return;
     }
     state.points -= r.cost;
     state.claimed.push(id);
-    state.log.unshift({ t: Date.now(), key: 'reward', vars: { title: T(r.title) }, n: -r.cost });
+    state.log.unshift({ t: Date.now(), label: `Reward: ${r.title}`, n: -r.cost });
     save(); renderProfile();
-    toast(t('toast.reward', { code: esc(r.code) }));
+    toast(`Reward claimed · code <b>${esc(r.code)}</b>`);
   }
 
-  /* ────────── два ИИ ────────── */
+  /* ────────── two assistants ────────── */
   let mode = 'assistant';
   const engine = () => (mode === 'guide' ? Guide : Assistant);
-  const ctx = () => ({ dest: dest(), state: { ...state, name: displayName() }, level: levelOf(state.points), nextLevel: nextLevel(state.points) });
+  const ctx = () => ({ state: { ...state, name: displayName() }, level: levelOf(state.points), nextLevel: nextLevel(state.points) });
+
+  const SIDEBAR = {
+    assistant: {
+      title: 'What the crew assistant knows',
+      items: [
+        'The three tiers and what each one actually includes',
+        'Experience needed, and when we will say no',
+        'Category 3 safety inventory aboard',
+        'Flights into Dalaman, transfers, money and packing',
+        'Cancellations, the Academy, the Club, your points'
+      ]
+    },
+    guide: {
+      title: 'What the town guide knows',
+      items: [
+        '12 places in Göcek — with prices and hours',
+        'Which place suits which time of day',
+        'Lay days, evenings after racing, days with the shore crew',
+        'Your level, points and check-ins so far'
+      ]
+    }
+  };
 
   function renderSidebar() {
-    if (mode === 'guide') {
-      $('#gaTitle').textContent = t('ai.sideGuide');
-      $('#gaList').innerHTML = t('ai.sideGuideItems')
-        .map(i => `<li>${esc(i.replace('{n}', dest().points.length))}</li>`).join('');
-    } else {
-      $('#gaTitle').textContent = t('ai.sideAssistant');
-      $('#gaList').innerHTML = t('ai.sideAssistantItems').map(i => `<li>${esc(i)}</li>`).join('');
-    }
+    const s = SIDEBAR[mode];
+    $('#gaTitle').textContent = s.title;
+    $('#gaList').innerHTML = s.items.map(i => `<li>${esc(i)}</li>`).join('');
+  }
+
+  function renderBoat() {
+    $('#boatType').textContent = BOAT.type;
+    $('#boatSpecs').innerHTML = BOAT.specs
+      .map(s => `<div class="ga-row"><span>${esc(s.label)}</span><b>${esc(s.value)}</b></div>`).join('');
   }
 
   function bubble(kind, html, cards) {
@@ -406,8 +574,8 @@
       wrap.innerHTML = cards.map(p => `
         <button class="msg-card" data-poi="${p.id}" style="${catStyle(p.cat)}" type="button">
           <span class="poi-ico">${catIcon(p.cat)}</span>
-          <span><span class="mc-name">${esc(T(p.name))}</span><br><span class="mc-sub">${esc(T(p.price))} · ${esc(T(p.time))}</span></span>
-          <span class="mc-go">${esc(t('ai.cardGo'))}</span>
+          <span><span class="mc-name">${esc(p.name)}</span><br><span class="mc-sub">${esc(p.price)} · ${esc(p.time)}</span></span>
+          <span class="mc-go">on the map →</span>
         </button>`).join('');
       b.append(wrap);
     }
@@ -440,7 +608,7 @@
 
   function resetChat() {
     $('#chatLog').innerHTML = '';
-    const w = mode === 'guide' ? Guide.WELCOME(dest()) : Assistant.WELCOME(ctx().state);
+    const w = mode === 'guide' ? Guide.WELCOME() : Assistant.WELCOME(ctx().state);
     bubble('bot', w.text);
     chips(w.chips);
     renderSidebar();
@@ -453,42 +621,42 @@
     resetChat();
   }
 
-  /* ────────── язык ────────── */
-  function applyI18n() {
-    document.documentElement.lang = Lang.get();
-    $$('[data-i18n]').forEach(el => {
-      const v = t(el.dataset.i18n);
-      if (typeof v === 'string') el.textContent = v;
-    });
-    $$('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
-    $$('[data-lang]').forEach(b => b.classList.toggle('on', b.dataset.lang === Lang.get()));
-    $('#perk1').innerHTML = t('modal.perk1', { n: BONUS.signup });
-    $('#perk3').innerHTML = t('modal.perk3', { a: BONUS.inviter, b: BONUS.invitee });
-    $('#authSubmit').textContent = t('modal.submit', { n: BONUS.signup });
-    $('#authTitle').textContent = t('modal.title');
-  }
-
-  function setLang(v) {
-    if (v === Lang.get()) return;
-    Lang.set(v);
-    applyI18n();
-    MapView.render(dest());
-    renderAll();
-    resetChat();
-  }
-
-  /* ────────── события ────────── */
+  /* ────────── events ────────── */
   document.addEventListener('click', e => {
     const el = e.target;
-
-    const lang = el.closest('[data-lang]');
-    if (lang) { setLang(lang.dataset.lang); return; }
 
     if (el.closest('[data-auth]')) { openAuth(); return; }
     if (el.closest('[data-auth-close]')) { closeAuth(); return; }
 
     const m = el.closest('[data-mode]');
     if (m) { setMode(m.dataset.mode); return; }
+
+    const tier = el.closest('[data-tier]');
+    if (tier) { chooseTier(tier.dataset.tier); return; }
+
+    const ans = el.closest('[data-answer]');
+    if (ans) { answerQuiz(ans.dataset.answer); return; }
+    if (el.closest('[data-quiz-restart]')) { restartQuiz(); return; }
+
+    const askTier = el.closest('[data-ask-tier]');
+    if (askTier) {
+      const t = TIERS.find(x => x.id === askTier.dataset.askTier);
+      setMode('assistant');
+      $('#ai').scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => ask(`Tell me about the ${t.name} tier`), 350);
+      return;
+    }
+
+    const ev = el.closest('[data-event]');
+    if (ev) { holdEvent(ev.dataset.event); return; }
+
+    const buy = el.closest('[data-buy]');
+    if (buy) { buyCourse(buy.dataset.buy, false); return; }
+
+    const cp = el.closest('[data-course-points]');
+    if (cp) { buyCourse(cp.dataset.coursePoints, true); return; }
+
+    if (el.closest('#clubBtn')) { joinClub(); return; }
 
     const f = el.closest('[data-cat]');
     if (f) { filter = f.dataset.cat; renderFilters(); renderList(); renderPins(); return; }
@@ -506,13 +674,10 @@
     if (ak) {
       const p = pointById(ak.dataset.ask);
       setMode('guide');
-      $('#guide').scrollIntoView({ behavior: 'smooth' });
-      setTimeout(() => ask(T(p.name)), 350);
+      $('#ai').scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => ask(p.name), 350);
       return;
     }
-
-    const reg = el.closest('[data-reg]');
-    if (reg) { joinRegatta(reg.dataset.reg); return; }
 
     const rw = el.closest('[data-reward]');
     if (rw) { claimReward(rw.dataset.reward); return; }
@@ -524,14 +689,14 @@
 
     if (el.classList.contains('chip')) {
       const q = el.textContent;
-      if (/^(зарегистрироваться|sign up)$/i.test(q.trim())) { openAuth(); return; }
+      if (/^sign up$/i.test(q.trim())) { openAuth(); return; }
       ask(q);
       return;
     }
 
     if (el.closest('#burger')) { $('#nav').classList.toggle('open'); return; }
     if (el.closest('#nav a')) { $('#nav').classList.remove('open'); return; }
-    if (el.closest('#ptsChip')) { $('#profile').scrollIntoView({ behavior: 'smooth' }); return; }
+    if (el.closest('#ptsChip')) { $('#account').scrollIntoView({ behavior: 'smooth' }); return; }
   });
 
   document.addEventListener('keydown', e => {
@@ -554,26 +719,26 @@
   });
 
   $('#refCopy').addEventListener('click', async () => {
-    if (!requireAuth('gateRef')) return;
+    if (!requireAuth('Your link appears as soon as you sign up')) return;
     try { await navigator.clipboard.writeText($('#refLink').value); } catch { $('#refLink').select(); }
-    toast(t('toast.copied'));
+    toast('Link copied — send it to your crew');
   });
 
   $('#refSim').addEventListener('click', () => {
-    if (!requireAuth('gateInvite')) return;
-    if (state.referrals >= 5) { toast(t('toast.invitesDone')); return; }
+    if (!requireAuth('Invitations are sent from your account')) return;
+    if (state.referrals >= 5) { toast('All five invitations are already used'); return; }
     state.referrals++;
     const tier = REF_TIERS.find(x => x.n === state.referrals);
-    addPoints(BONUS.inviter, 'referral', { n: state.referrals });
-    if (tier) toast(t('toast.tier', { n: tier.n, title: esc(T(tier.title)) }));
+    addPoints(BONUS.inviter, `Friend joined (${state.referrals}/5)`);
+    if (tier) toast(`Tier ${tier.n}: <b>${esc(tier.title)}</b> unlocked`);
     renderProfile();
   });
 
   $('#resetAll').addEventListener('click', () => {
-    if (!confirm(t('confirmReset'))) return;
+    if (!confirm('Sign out and erase points, check-ins, berths and rewards?')) return;
     state = { ...DEFAULT }; save();
-    renderAll(); resetChat();
-    toast(t('toast.cleared'));
+    restartQuiz(); renderAll(); resetChat();
+    toast('Account cleared');
   });
 
   const spy = new IntersectionObserver(entries => {
@@ -582,23 +747,28 @@
       $$('[data-nav]').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + en.target.id));
     });
   }, { rootMargin: '-45% 0px -50% 0px' });
-  ['map', 'collections', 'regattas', 'guide', 'profile'].forEach(id => spy.observe($('#' + id)));
+  ['berths', 'calendar', 'academy', 'map', 'ai', 'account'].forEach(id => spy.observe($('#' + id)));
 
-  /* ────────── старт ────────── */
+  /* ────────── start ────────── */
   function renderAll() {
+    renderTiers();
+    renderMagnet();
+    renderEvents();
+    renderAcademy();
     renderCity();
     renderFilters();
     renderList();
     renderPins();
     renderDetail();
     renderCollections();
-    renderRegattas();
+    renderFaq();
     renderHero();
     renderProfile();
+    renderBoat();
   }
 
-  applyI18n();
-  MapView.render(dest());
+  MapView.render(D);
+  renderQuiz();
   renderAll();
   resetChat();
 })();

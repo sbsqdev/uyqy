@@ -135,7 +135,7 @@ const MapView = (() => {
         fill: 'rgba(200,230,245,.42)', 'font-size': '15', 'font-family': 'Manrope, sans-serif',
         'font-weight': '600', 'letter-spacing': '1.6'
       });
-      t.textContent = (typeof T === 'function' ? T(l.text) : l.text).toUpperCase();
+      t.textContent = l.text.toUpperCase();
       svg.append(t);
     });
   }
